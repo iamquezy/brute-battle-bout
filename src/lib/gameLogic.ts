@@ -1,4 +1,5 @@
 import { Character, CharacterClass, StatType } from '@/types/game';
+import { PRE_MADE_OPPONENTS } from '@/types/opponents';
 
 export const CLASS_STATS: Record<CharacterClass, Character['stats']> = {
   fighter: {
@@ -99,8 +100,7 @@ export function createEnemyCharacter(playerLevel: number, opponentId?: string): 
   
   // If a specific opponent is chosen, use their stats
   if (opponentId) {
-    const { PRE_MADE_OPPONENTS } = require('../types/opponents');
-    const opponent = PRE_MADE_OPPONENTS.find((o: any) => o.id === opponentId);
+    const opponent = PRE_MADE_OPPONENTS.find((o) => o.id === opponentId);
     if (opponent) {
       enemy = createCharacter(opponent.name, opponent.class);
       statModifiers = opponent.statModifiers;
