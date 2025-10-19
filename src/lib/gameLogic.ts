@@ -85,24 +85,36 @@ export function levelUpCharacter(character: Character, statChoice: StatType): Ch
   newChar.level += 1;
   newChar.experience = 0;
   
+  // Base stat increases for all stats (to match enemy scaling)
+  newChar.stats.attack += 2;
+  newChar.stats.defense += 2;
+  newChar.stats.speed += 1;
+  newChar.stats.maxHealth += 8;
+  newChar.stats.evasion += 1;
+  newChar.stats.critChance += 1;
+  newChar.stats.luck += 1;
+  
+  // Additional bonus for chosen stat
   switch (statChoice) {
     case 'attack':
       newChar.stats.attack += 3;
-      newChar.stats.critChance += 1;
+      newChar.stats.critChance += 2;
       break;
     case 'defense':
       newChar.stats.defense += 3;
-      newChar.stats.evasion += 1;
+      newChar.stats.evasion += 2;
       break;
     case 'speed':
-      newChar.stats.speed += 3;
+      newChar.stats.speed += 4;
       newChar.stats.evasion += 2;
       break;
     case 'health':
-      newChar.stats.maxHealth += 15;
-      newChar.stats.health = newChar.stats.maxHealth;
+      newChar.stats.maxHealth += 12;
       break;
   }
+  
+  // Update current health to new max
+  newChar.stats.health = newChar.stats.maxHealth;
   
   return newChar;
 }
