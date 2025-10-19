@@ -136,18 +136,18 @@ export function createEnemyCharacter(playerLevel: number, opponentId?: string): 
   
   enemy.level = playerLevel;
   
-  // Base balanced scaling
-  const levelMultiplier = 1 + (playerLevel - 1) * 0.12;
+  // Base balanced scaling (reduced for better player chances)
+  const levelMultiplier = 1 + (playerLevel - 1) * 0.10;
   
-  // Apply level and opponent-specific modifiers
-  enemy.stats.health = Math.floor(enemy.stats.health * levelMultiplier * 0.95 * statModifiers.healthMod);
+  // Apply level and opponent-specific modifiers (enemies are weaker)
+  enemy.stats.health = Math.floor(enemy.stats.health * levelMultiplier * 0.88 * statModifiers.healthMod);
   enemy.stats.maxHealth = enemy.stats.health;
-  enemy.stats.attack = Math.floor(enemy.stats.attack * levelMultiplier * 0.90 * statModifiers.attackMod);
-  enemy.stats.defense = Math.floor(enemy.stats.defense * levelMultiplier * 0.90 * statModifiers.defenseMod);
-  enemy.stats.speed = Math.floor(enemy.stats.speed * levelMultiplier * statModifiers.speedMod);
-  enemy.stats.evasion = Math.floor(enemy.stats.evasion * levelMultiplier);
-  enemy.stats.critChance = Math.floor(enemy.stats.critChance * levelMultiplier);
-  enemy.stats.luck = Math.floor(enemy.stats.luck * levelMultiplier);
+  enemy.stats.attack = Math.floor(enemy.stats.attack * levelMultiplier * 0.85 * statModifiers.attackMod);
+  enemy.stats.defense = Math.floor(enemy.stats.defense * levelMultiplier * 0.85 * statModifiers.defenseMod);
+  enemy.stats.speed = Math.floor(enemy.stats.speed * levelMultiplier * 0.95 * statModifiers.speedMod);
+  enemy.stats.evasion = Math.floor(enemy.stats.evasion * levelMultiplier * 0.90);
+  enemy.stats.critChance = Math.floor(enemy.stats.critChance * levelMultiplier * 0.90);
+  enemy.stats.luck = Math.floor(enemy.stats.luck * levelMultiplier * 0.90);
   
   return enemy;
 }

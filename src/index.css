@@ -48,14 +48,15 @@ All colors MUST be HSL.
     --arena-bg: 270 35% 6%;
     --arena-accent: 280 40% 25%;
     
-    --gradient-arena: linear-gradient(180deg, hsl(270 35% 6%) 0%, hsl(280 40% 10%) 100%);
-    --gradient-gold: linear-gradient(135deg, hsl(45 100% 50%) 0%, hsl(35 100% 60%) 100%);
-    --gradient-fighter: linear-gradient(135deg, hsl(0 75% 55%) 0%, hsl(0 90% 65%) 100%);
-    --gradient-mage: linear-gradient(135deg, hsl(240 85% 60%) 0%, hsl(260 90% 70%) 100%);
-    --gradient-archer: linear-gradient(135deg, hsl(140 70% 50%) 0%, hsl(160 80% 60%) 100%);
+    --gradient-arena: linear-gradient(180deg, hsl(270 35% 6%) 0%, hsl(280 40% 10%) 50%, hsl(270 35% 8%) 100%);
+    --gradient-gold: linear-gradient(135deg, hsl(45 100% 50%) 0%, hsl(35 100% 60%) 50%, hsl(45 100% 55%) 100%);
+    --gradient-fighter: linear-gradient(135deg, hsl(0 75% 55%) 0%, hsl(0 90% 65%) 50%, hsl(10 85% 60%) 100%);
+    --gradient-mage: linear-gradient(135deg, hsl(240 85% 60%) 0%, hsl(260 90% 70%) 50%, hsl(250 88% 65%) 100%);
+    --gradient-archer: linear-gradient(135deg, hsl(140 70% 50%) 0%, hsl(160 80% 60%) 50%, hsl(150 75% 55%) 100%);
 
-    --shadow-glow: 0 0 30px -5px;
-    --shadow-combat: 0 10px 40px -10px rgba(0, 0, 0, 0.6);
+    --shadow-glow: 0 0 40px -5px;
+    --shadow-combat: 0 15px 50px -10px rgba(0, 0, 0, 0.8);
+    --shadow-intense: 0 20px 60px -15px;
     
     --rarity-common: 156 40% 50%;
     --rarity-uncommon: 142 76% 36%;
@@ -72,5 +73,51 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+@layer utilities {
+  .animate-float {
+    animation: float 3s ease-in-out infinite;
+  }
+  
+  .animate-attack-slash {
+    animation: attackSlash 0.6s ease-out;
+  }
+  
+  .animate-hit-flash {
+    animation: hitFlash 0.6s ease-out;
+  }
+  
+  @keyframes float {
+    0%, 100% {
+      transform: translateY(0px);
+    }
+    50% {
+      transform: translateY(-10px);
+    }
+  }
+  
+  @keyframes attackSlash {
+    0% {
+      transform: scale(1) rotate(0deg);
+    }
+    50% {
+      transform: scale(1.15) rotate(5deg);
+      box-shadow: 0 0 30px hsl(var(--primary));
+    }
+    100% {
+      transform: scale(1) rotate(0deg);
+    }
+  }
+  
+  @keyframes hitFlash {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.5;
+      box-shadow: 0 0 40px hsl(var(--destructive));
+    }
   }
 }

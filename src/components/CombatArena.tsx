@@ -10,7 +10,7 @@ import { toast } from 'sonner';
 interface CombatArenaProps {
   player: Character;
   opponentId?: string;
-  onCombatEnd: (victory: boolean, expGained: number) => void;
+  onCombatEnd: (victory: boolean, expGained: number, opponentName?: string) => void;
 }
 
 export function CombatArena({ player, opponentId, onCombatEnd }: CombatArenaProps) {
@@ -90,12 +90,12 @@ export function CombatArena({ player, opponentId, onCombatEnd }: CombatArenaProp
     if (playerHealth <= 0) {
       addLog('You have been defeated...', 'defeat');
       toast.error('Defeat!');
-      setTimeout(() => onCombatEnd(false, 0), 1500);
+      setTimeout(() => onCombatEnd(false, 0, enemy.name), 1500);
     } else if (enemyHealth <= 0) {
       const expGained = enemy.level * 50 + 25;
       addLog(`Victory! Gained ${expGained} experience!`, 'victory');
       toast.success(`Victory! +${expGained} EXP`);
-      setTimeout(() => onCombatEnd(true, expGained), 1500);
+      setTimeout(() => onCombatEnd(true, expGained, enemy.name), 1500);
     }
   }, [playerHealth, enemyHealth]);
 
