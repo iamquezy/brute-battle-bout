@@ -1,6 +1,7 @@
 import { Equipment, EquipmentSlots } from '@/types/equipment';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 import { Sword, Shield, Gem, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -13,11 +14,11 @@ interface InventoryProps {
 }
 
 const RARITY_COLORS = {
-  common: 'text-gray-400 border-gray-400/30',
-  uncommon: 'text-green-400 border-green-400/30',
-  rare: 'text-blue-400 border-blue-400/30',
-  epic: 'text-purple-400 border-purple-400/30',
-  legendary: 'text-amber-400 border-amber-400/30',
+  common: 'text-gray-500 border-gray-500/30',
+  uncommon: 'text-green-500 border-green-500/30',
+  rare: 'text-blue-500 border-blue-500/30',
+  epic: 'text-purple-500 border-purple-500/30',
+  legendary: 'text-yellow-500 border-yellow-500/30',
 };
 
 const TYPE_ICONS = {
@@ -95,41 +96,63 @@ export function Inventory({ inventory, equippedItems, onEquip, onUnequip, onClos
                 No items in inventory. Defeat opponents to find equipment!
               </p>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                {inventory.map((item) => {
-                  const Icon = TYPE_ICONS[item.type];
-                  const isEquipped = equippedItems[item.type]?.id === item.id;
-                  
-                  return (
-                    <Card
-                      key={item.id}
-                      className={cn(
-                        'p-3 border-2 transition-all hover:scale-105',
-                        RARITY_COLORS[item.rarity],
-                        isEquipped && 'opacity-50'
-                      )}
-                    >
-                      <div className="flex items-start gap-2 mb-2">
-                        <Icon className="h-5 w-5 mt-1" />
-                        <div className="flex-1">
-                          <p className="font-bold">{item.name}</p>
-                          <p className="text-xs opacity-75 capitalize">{item.type}</p>
-                        </div>
-                      </div>
-                      <p className="text-sm mb-2">{getStatDisplay(item.stats)}</p>
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        onClick={() => onEquip(item)}
-                        disabled={isEquipped}
-                        className="w-full"
-                      >
-                        {isEquipped ? 'Equipped' : 'Equip'}
-                      </Button>
-                    </Card>
-                  );
-                })}
-              </div>
+              <TooltipProvider>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {inventory.map((item) => {
+                    const Icon = TYPE_ICONS[item.type];
+                    const isEquipped = equippedItems[item.type]?.id === item.id;
+                    
+                    return (
+                      <Tooltip key={item.id}>
+                        <TooltipTrigger asChild>
+                          <Card
+                            className={cn(
+                              'p-3 border-2 transition-all hover:scale-105 cursor-pointer',
+                              RARITY_COLORS[item.rarity],
+                              isEquipped && 'opacity-50'
+                            )}
+                          >
+                            <div className="flex items-start gap-2 mb-2">
+                              <Icon className="h-5 w-5 mt-1" />
+                              <div className="flex-1">
+                                <p className="font-bold">{item.name}</p>
+                                <p className="text-xs opacity-75 capitalize">{item.type}</p>
+                              </div>
+                            </div>
+                            <p className="text-sm mb-2">{getStatDisplay(item.stats)}</p>
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              onClick={() => onEquip(item)}
+                              disabled={isEquipped}
+                              className="w-full"
+                            >
+                              {isEquipped ? 'Equipped' : 'Equip'}
+                            </Button>
+                          </Card>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="bg-card border-2 p-3">
+                          <div className="space-y-1">
+                            <p className={cn('font-bold text-base', RARITY_COLORS[item.rarity])}>
+                              {item.name}
+                            </p>
+                            <p className="text-xs text-muted-foreground capitalize">{item.rarity} {item.type}</p>
+                            <div className="pt-2 space-y-1">
+                              {Object.entries(item.stats)
+                                .filter(([_, value]) => value && value > 0)
+                                .map(([key, value]) => (
+                                  <p key={key} className="text-sm text-green-400">
+                                    +{value} {key}
+                                  </p>
+                                ))}
+                            </div>
+                          </div>
+                        </TooltipContent>
+                      </Tooltip>
+                    );
+                  })}
+                </div>
+              </TooltipProvider>
             )}
           </div>
         </div>

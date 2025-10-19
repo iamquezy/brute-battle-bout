@@ -129,7 +129,7 @@ export function createEnemyCharacter(playerLevel: number, opponentId?: string): 
   if (opponentId) {
     const opponent = PRE_MADE_OPPONENTS.find((o) => o.id === opponentId);
     if (opponent) {
-      enemy = createCharacter(opponent.name, opponent.class);
+      enemy = createCharacter(opponent.title, opponent.class); // Use title instead of name
       statModifiers = opponent.statModifiers;
     }
   }

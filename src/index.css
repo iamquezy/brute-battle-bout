@@ -58,11 +58,11 @@ All colors MUST be HSL.
     --shadow-combat: 0 15px 50px -10px rgba(0, 0, 0, 0.8);
     --shadow-intense: 0 20px 60px -15px;
     
-    --rarity-common: 156 40% 50%;
-    --rarity-uncommon: 142 76% 36%;
-    --rarity-rare: 217 91% 60%;
-    --rarity-epic: 271 76% 53%;
-    --rarity-legendary: 45 93% 47%;
+    --rarity-common: 107 114 128;
+    --rarity-uncommon: 34 197 94;
+    --rarity-rare: 59 130 246;
+    --rarity-epic: 168 85 247;
+    --rarity-legendary: 234 179 8;
   }
 }
 

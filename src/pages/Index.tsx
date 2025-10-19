@@ -108,6 +108,8 @@ const Index = () => {
   };
 
   const handleEquip = (item: Equipment) => {
+    if (!player) return;
+    
     const currentItem = equippedItems[item.type];
     
     // Unequip current item if exists
@@ -116,28 +118,33 @@ const Index = () => {
     }
     
     // Equip new item
-    setEquippedItems(prev => ({
-      ...prev,
+    const newEquippedItems = {
+      ...equippedItems,
       [item.type]: item,
-    }));
+    };
+    
+    setEquippedItems(newEquippedItems);
     
     // Remove from inventory
     setInventory(prev => prev.filter(i => i.id !== item.id));
     
-    // Apply stats to player
-    if (player) {
-      const allEquipment = Object.values({ ...equippedItems, [item.type]: item }).filter(Boolean) as Equipment[];
-      const equipStats = calculateEquipmentStats(allEquipment);
-      
-      const updatedPlayer = { ...player };
-      Object.entries(equipStats).forEach(([key, value]) => {
-        if (key in updatedPlayer.stats) {
-          (updatedPlayer.stats as any)[key] += value;
-        }
-      });
-      
-      setPlayer(updatedPlayer);
-    }
+    // Recalculate stats from base
+    const basePlayer = createCharacter(player.name, player.class);
+    const updatedPlayer = { ...basePlayer };
+    updatedPlayer.level = player.level;
+    updatedPlayer.experience = player.experience;
+    
+    // Apply all equipment stats
+    const allEquipment = Object.values(newEquippedItems).filter(Boolean) as Equipment[];
+    const equipStats = calculateEquipmentStats(allEquipment);
+    
+    Object.entries(equipStats).forEach(([key, value]) => {
+      if (key in updatedPlayer.stats) {
+        (updatedPlayer.stats as any)[key] += value;
+      }
+    });
+    
+    setPlayer(updatedPlayer);
     
     toast.success(`Equipped ${item.name}`);
   };
@@ -232,108 +239,7 @@ const Index = () => {
 
         {/* Main Layout: 3 columns */}
         <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left: Battle History */}
-          <Card className="p-6 bg-card/95 backdrop-blur-sm border-2 border-primary/30 shadow-combat">
-            <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-              <Trophy className="w-6 h-6 text-primary" />
-              Battle History
-            </h2>
-            <div className="space-y-2 mb-4">
-              <div className="flex justify-between text-lg font-bold">
-                <span className="text-green-400">Victories: {wins}</span>
-                <span className="text-red-400">Defeats: {losses}</span>
-              </div>
-              <div className="text-sm text-muted-foreground text-center">
-                Win Rate: {battleHistory.length > 0 ? Math.round((wins / battleHistory.length) * 100) : 0}%
-              </div>
-            </div>
-            <div className="space-y-2 max-h-[400px] overflow-y-auto">
-              {battleHistory.length === 0 ? (
-                <p className="text-muted-foreground text-center py-4">No battles yet</p>
-              ) : (
-                battleHistory.map((battle, idx) => (
-                  <div
-                    key={idx}
-                    className={`p-3 rounded border-2 ${
-                      battle.result === 'victory'
-                        ? 'bg-green-500/10 border-green-500/30'
-                        : 'bg-red-500/10 border-red-500/30'
-                    }`}
-                  >
-                    <div className="flex justify-between items-center">
-                      <span className="font-bold text-sm">{battle.opponent}</span>
-                      <span className={`text-xs font-bold uppercase ${
-                        battle.result === 'victory' ? 'text-green-400' : 'text-red-400'
-                      }`}>
-                        {battle.result}
-                      </span>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </Card>
-
-          {/* Center: Character Stats */}
-          <Card className="p-6 bg-card/95 backdrop-blur-sm border-2 border-primary/30 shadow-combat">
-            <div className="text-center mb-6">
-              <h2 className="text-3xl font-bold mb-2">{player.name}</h2>
-              <div className="inline-block px-4 py-2 rounded-full bg-gradient-gold text-primary-foreground font-bold text-lg">
-                Level {player.level}
-              </div>
-              <div className="mt-2 text-sm text-muted-foreground capitalize">
-                {player.class} Warrior
-              </div>
-            </div>
-
-            {/* Experience Bar */}
-            <div className="mb-6">
-              <div className="flex justify-between text-sm mb-2">
-                <span>Experience</span>
-                <span className="font-bold">{player.experience} / {expNeeded}</span>
-              </div>
-              <div className="h-4 bg-muted rounded-full overflow-hidden border-2 border-primary/30">
-                <div 
-                  className="h-full bg-gradient-gold transition-all duration-500"
-                  style={{ width: `${expProgress}%` }}
-                />
-              </div>
-            </div>
-
-            {/* Stats Grid */}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="text-center p-3 bg-secondary/50 rounded-lg border border-border">
-                <p className="text-xs text-muted-foreground mb-1">Health</p>
-                <p className="text-lg font-bold">{player.stats.health}/{player.stats.maxHealth}</p>
-              </div>
-              <div className="text-center p-3 bg-secondary/50 rounded-lg border border-border">
-                <p className="text-xs text-muted-foreground mb-1">Attack</p>
-                <p className="text-lg font-bold">{player.stats.attack}</p>
-              </div>
-              <div className="text-center p-3 bg-secondary/50 rounded-lg border border-border">
-                <p className="text-xs text-muted-foreground mb-1">Defense</p>
-                <p className="text-lg font-bold">{player.stats.defense}</p>
-              </div>
-              <div className="text-center p-3 bg-secondary/50 rounded-lg border border-border">
-                <p className="text-xs text-muted-foreground mb-1">Speed</p>
-                <p className="text-lg font-bold">{player.stats.speed}</p>
-              </div>
-              <div className="text-center p-3 bg-secondary/50 rounded-lg border border-border">
-                <p className="text-xs text-muted-foreground mb-1">Evasion</p>
-                <p className="text-lg font-bold">{player.stats.evasion}%</p>
-              </div>
-              <div className="text-center p-3 bg-secondary/50 rounded-lg border border-border">
-                <p className="text-xs text-muted-foreground mb-1">Crit</p>
-                <p className="text-lg font-bold">{player.stats.critChance}%</p>
-              </div>
-              <div className="text-center p-3 bg-secondary/50 rounded-lg border border-border">
-                <p className="text-xs text-muted-foreground mb-1">Luck</p>
-                <p className="text-lg font-bold">{player.stats.luck}</p>
-              </div>
-            </div>
-          </Card>
-
-          {/* Right: Inventory */}
+          {/* Left: Equipment */}
           <Card className="p-6 bg-card/95 backdrop-blur-sm border-2 border-primary/30 shadow-combat">
             <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
               <Backpack className="w-6 h-6 text-primary" />
@@ -410,6 +316,107 @@ const Index = () => {
                 >
                   View All ({inventory.length})
                 </Button>
+              )}
+            </div>
+          </Card>
+
+          {/* Center: Character Stats */}
+          <Card className="p-6 bg-card/95 backdrop-blur-sm border-2 border-primary/30 shadow-combat">
+            <div className="text-center mb-6">
+              <h2 className="text-3xl font-bold mb-2">{player.name}</h2>
+              <div className="inline-block px-4 py-2 rounded-full bg-gradient-gold text-primary-foreground font-bold text-lg">
+                Level {player.level}
+              </div>
+              <div className="mt-2 text-sm text-muted-foreground capitalize">
+                {player.class} Warrior
+              </div>
+            </div>
+
+            {/* Experience Bar */}
+            <div className="mb-6">
+              <div className="flex justify-between text-sm mb-2">
+                <span>Experience</span>
+                <span className="font-bold">{player.experience} / {expNeeded}</span>
+              </div>
+              <div className="h-4 bg-muted rounded-full overflow-hidden border-2 border-primary/30">
+                <div 
+                  className="h-full bg-gradient-gold transition-all duration-500"
+                  style={{ width: `${expProgress}%` }}
+                />
+              </div>
+            </div>
+
+            {/* Stats Grid */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="text-center p-3 bg-secondary/50 rounded-lg border border-border">
+                <p className="text-xs text-muted-foreground mb-1">Health</p>
+                <p className="text-lg font-bold">{player.stats.health}/{player.stats.maxHealth}</p>
+              </div>
+              <div className="text-center p-3 bg-secondary/50 rounded-lg border border-border">
+                <p className="text-xs text-muted-foreground mb-1">Attack</p>
+                <p className="text-lg font-bold">{player.stats.attack}</p>
+              </div>
+              <div className="text-center p-3 bg-secondary/50 rounded-lg border border-border">
+                <p className="text-xs text-muted-foreground mb-1">Defense</p>
+                <p className="text-lg font-bold">{player.stats.defense}</p>
+              </div>
+              <div className="text-center p-3 bg-secondary/50 rounded-lg border border-border">
+                <p className="text-xs text-muted-foreground mb-1">Speed</p>
+                <p className="text-lg font-bold">{player.stats.speed}</p>
+              </div>
+              <div className="text-center p-3 bg-secondary/50 rounded-lg border border-border">
+                <p className="text-xs text-muted-foreground mb-1">Evasion</p>
+                <p className="text-lg font-bold">{player.stats.evasion}%</p>
+              </div>
+              <div className="text-center p-3 bg-secondary/50 rounded-lg border border-border">
+                <p className="text-xs text-muted-foreground mb-1">Crit</p>
+                <p className="text-lg font-bold">{player.stats.critChance}%</p>
+              </div>
+              <div className="text-center p-3 bg-secondary/50 rounded-lg border border-border">
+                <p className="text-xs text-muted-foreground mb-1">Luck</p>
+                <p className="text-lg font-bold">{player.stats.luck}</p>
+              </div>
+            </div>
+          </Card>
+
+          {/* Right: Battle History */}
+          <Card className="p-6 bg-card/95 backdrop-blur-sm border-2 border-primary/30 shadow-combat">
+            <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
+              <Trophy className="w-6 h-6 text-primary" />
+              Battle History
+            </h2>
+            <div className="space-y-2 mb-4">
+              <div className="flex justify-between text-lg font-bold">
+                <span className="text-green-400">Victories: {wins}</span>
+                <span className="text-red-400">Defeats: {losses}</span>
+              </div>
+              <div className="text-sm text-muted-foreground text-center">
+                Win Rate: {battleHistory.length > 0 ? Math.round((wins / battleHistory.length) * 100) : 0}%
+              </div>
+            </div>
+            <div className="space-y-2 max-h-[400px] overflow-y-auto">
+              {battleHistory.length === 0 ? (
+                <p className="text-muted-foreground text-center py-4">No battles yet</p>
+              ) : (
+                battleHistory.map((battle, idx) => (
+                  <div
+                    key={idx}
+                    className={`p-3 rounded border-2 ${
+                      battle.result === 'victory'
+                        ? 'bg-green-500/10 border-green-500/30'
+                        : 'bg-red-500/10 border-red-500/30'
+                    }`}
+                  >
+                    <div className="flex justify-between items-center">
+                      <span className="font-bold text-sm">{battle.opponent}</span>
+                      <span className={`text-xs font-bold uppercase ${
+                        battle.result === 'victory' ? 'text-green-400' : 'text-red-400'
+                      }`}>
+                        {battle.result}
+                      </span>
+                    </div>
+                  </div>
+                ))
               )}
             </div>
           </Card>
