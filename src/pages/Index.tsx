@@ -9,6 +9,7 @@ import { Inventory } from '@/components/Inventory';
 import { Skills } from '@/components/Skills';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { createCharacter, levelUpCharacter, checkLevelUp } from '@/lib/gameLogic';
 import { generateEquipment, shouldDropLoot, calculateEquipmentStats } from '@/lib/equipmentLogic';
 import { getRandomSkill, getSkillById } from '@/lib/skillsData';
@@ -136,6 +137,33 @@ const Index = () => {
     setGameState('hub');
   };
 
+  const calculateSkillBonuses = () => {
+    const bonuses = {
+      attack: 0,
+      defense: 0,
+      speed: 0,
+      maxHealth: 0,
+      evasion: 0,
+      critChance: 0,
+      luck: 0,
+    };
+
+    acquiredSkills.forEach(skillId => {
+      const skill = getSkillById(skillId);
+      if (skill?.effect) {
+        if (skill.effect.attack) bonuses.attack += skill.effect.attack;
+        if (skill.effect.defense) bonuses.defense += skill.effect.defense;
+        if (skill.effect.speed) bonuses.speed += skill.effect.speed;
+        if (skill.effect.health) bonuses.maxHealth += skill.effect.health;
+        if (skill.effect.evasion) bonuses.evasion += skill.effect.evasion;
+        if (skill.effect.critChance) bonuses.critChance += skill.effect.critChance;
+        if (skill.effect.luck) bonuses.luck += skill.effect.luck;
+      }
+    });
+
+    return bonuses;
+  };
+
   const handleEquip = (item: Equipment) => {
     if (!player) return;
     
@@ -172,6 +200,17 @@ const Index = () => {
         (updatedPlayer.stats as any)[key] += value;
       }
     });
+
+    // Apply skill bonuses
+    const skillBonuses = calculateSkillBonuses();
+    updatedPlayer.stats.attack += skillBonuses.attack;
+    updatedPlayer.stats.defense += skillBonuses.defense;
+    updatedPlayer.stats.speed += skillBonuses.speed;
+    updatedPlayer.stats.maxHealth += skillBonuses.maxHealth;
+    updatedPlayer.stats.health = Math.min(updatedPlayer.stats.health, updatedPlayer.stats.maxHealth);
+    updatedPlayer.stats.evasion += skillBonuses.evasion;
+    updatedPlayer.stats.critChance += skillBonuses.critChance;
+    updatedPlayer.stats.luck += skillBonuses.luck;
     
     setPlayer(updatedPlayer);
     
@@ -201,6 +240,17 @@ const Index = () => {
         (updatedPlayer.stats as any)[key] += value;
       }
     });
+
+    // Apply skill bonuses
+    const skillBonuses = calculateSkillBonuses();
+    updatedPlayer.stats.attack += skillBonuses.attack;
+    updatedPlayer.stats.defense += skillBonuses.defense;
+    updatedPlayer.stats.speed += skillBonuses.speed;
+    updatedPlayer.stats.maxHealth += skillBonuses.maxHealth;
+    updatedPlayer.stats.health = Math.min(updatedPlayer.stats.health, updatedPlayer.stats.maxHealth);
+    updatedPlayer.stats.evasion += skillBonuses.evasion;
+    updatedPlayer.stats.critChance += skillBonuses.critChance;
+    updatedPlayer.stats.luck += skillBonuses.luck;
     
     setPlayer(updatedPlayer);
     
@@ -259,7 +309,7 @@ const Index = () => {
           </div>
           <Button
             onClick={startNewBattle}
-            className="w-full max-w-md mx-auto block h-16 text-xl font-bold bg-gradient-gold text-primary-foreground hover:opacity-90 transition-opacity shadow-combat"
+            className="w-full max-w-md mx-auto flex items-center justify-center h-16 text-xl font-bold bg-gradient-gold text-primary-foreground hover:opacity-90 transition-all hover:scale-105 shadow-combat"
           >
             <Swords className="w-6 h-6 mr-2" />
             Enter the Arena
@@ -283,7 +333,7 @@ const Index = () => {
                 Win Rate: {battleHistory.length > 0 ? Math.round((wins / battleHistory.length) * 100) : 0}%
               </div>
             </div>
-            <div className="space-y-2 max-h-[400px] overflow-y-auto">
+            <div className="space-y-2 max-h-[400px] overflow-y-auto styled-scrollbar">
               {battleHistory.length === 0 ? (
                 <p className="text-muted-foreground text-center py-4">No battles yet</p>
               ) : (
@@ -410,30 +460,58 @@ const Index = () => {
               {/* Inventory Items */}
               <div>
                 <h3 className="text-sm font-bold mb-2">Inventory ({inventory.length})</h3>
-                <div className="space-y-1.5 max-h-[150px] overflow-y-auto">
-                  {inventory.length === 0 ? (
-                    <p className="text-muted-foreground text-center py-2 text-xs">
-                      Defeat enemies to find loot!
-                    </p>
-                  ) : (
-                    inventory.slice(0, 3).map((item) => (
-                      <div
-                        key={item.id}
-                        className={`p-1.5 rounded border-2 cursor-pointer hover:scale-105 transition-transform ${
-                          item.rarity === 'legendary' ? 'border-[hsl(var(--rarity-legendary))]' :
-                          item.rarity === 'epic' ? 'border-[hsl(var(--rarity-epic))]' :
-                          item.rarity === 'rare' ? 'border-[hsl(var(--rarity-rare))]' :
-                          item.rarity === 'uncommon' ? 'border-[hsl(var(--rarity-uncommon))]' :
-                          'border-[hsl(var(--rarity-common))]'
-                        }`}
-                        onClick={() => handleEquip(item)}
-                      >
-                        <p className="text-xs font-bold">{item.name}</p>
-                        <p className="text-xs text-muted-foreground capitalize">{item.type}</p>
-                      </div>
-                    ))
-                  )}
-                </div>
+                <TooltipProvider>
+                  <div className="space-y-1.5 max-h-[150px] overflow-y-auto styled-scrollbar">
+                    {inventory.length === 0 ? (
+                      <p className="text-muted-foreground text-center py-2 text-xs">
+                        Defeat enemies to find loot!
+                      </p>
+                    ) : (
+                      inventory.slice(0, 3).map((item) => (
+                        <Tooltip key={item.id}>
+                          <TooltipTrigger asChild>
+                            <div
+                              className={`p-1.5 rounded border-2 cursor-pointer hover:scale-105 transition-transform ${
+                                item.rarity === 'legendary' ? 'border-[hsl(var(--rarity-legendary))]' :
+                                item.rarity === 'epic' ? 'border-[hsl(var(--rarity-epic))]' :
+                                item.rarity === 'rare' ? 'border-[hsl(var(--rarity-rare))]' :
+                                item.rarity === 'uncommon' ? 'border-[hsl(var(--rarity-uncommon))]' :
+                                'border-[hsl(var(--rarity-common))]'
+                              }`}
+                              onClick={() => handleEquip(item)}
+                            >
+                              <p className="text-xs font-bold">{item.name}</p>
+                              <p className="text-xs text-muted-foreground capitalize">{item.type}</p>
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent side="left" className="bg-card border-2 border-primary/30 p-3">
+                            <div className="space-y-1">
+                              <p className={`font-bold text-sm ${
+                                item.rarity === 'legendary' ? 'text-[hsl(var(--rarity-legendary))]' :
+                                item.rarity === 'epic' ? 'text-[hsl(var(--rarity-epic))]' :
+                                item.rarity === 'rare' ? 'text-[hsl(var(--rarity-rare))]' :
+                                item.rarity === 'uncommon' ? 'text-[hsl(var(--rarity-uncommon))]' :
+                                'text-[hsl(var(--rarity-common))]'
+                              }`}>
+                                {item.name}
+                              </p>
+                              <p className="text-xs text-muted-foreground capitalize">{item.rarity} {item.type}</p>
+                              <div className="pt-2 space-y-0.5 border-t border-border">
+                                {item.stats.attack > 0 && <p className="text-xs text-green-400">+{item.stats.attack} Attack</p>}
+                                {item.stats.defense > 0 && <p className="text-xs text-green-400">+{item.stats.defense} Defense</p>}
+                                {item.stats.speed > 0 && <p className="text-xs text-green-400">+{item.stats.speed} Speed</p>}
+                                {item.stats.health > 0 && <p className="text-xs text-green-400">+{item.stats.health} Health</p>}
+                                {item.stats.evasion > 0 && <p className="text-xs text-green-400">+{item.stats.evasion}% Evasion</p>}
+                                {item.stats.critChance > 0 && <p className="text-xs text-green-400">+{item.stats.critChance}% Crit</p>}
+                                {item.stats.luck > 0 && <p className="text-xs text-green-400">+{item.stats.luck} Luck</p>}
+                              </div>
+                            </div>
+                          </TooltipContent>
+                        </Tooltip>
+                      ))
+                    )}
+                  </div>
+                </TooltipProvider>
                 {inventory.length > 3 && (
                   <Button
                     variant="outline"
