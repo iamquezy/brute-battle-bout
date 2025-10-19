@@ -7,7 +7,7 @@ All colors MUST be HSL.
 */
 
 @layer base {
-  :root {
+:root {
     --background: 270 30% 8%;
     --foreground: 45 100% 95%;
 
@@ -56,6 +56,12 @@ All colors MUST be HSL.
 
     --shadow-glow: 0 0 30px -5px;
     --shadow-combat: 0 10px 40px -10px rgba(0, 0, 0, 0.6);
+    
+    --rarity-common: 156 40% 50%;
+    --rarity-uncommon: 142 76% 36%;
+    --rarity-rare: 217 91% 60%;
+    --rarity-epic: 271 76% 53%;
+    --rarity-legendary: 45 93% 47%;
   }
 }
 

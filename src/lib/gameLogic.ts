@@ -8,6 +8,9 @@ export const CLASS_STATS: Record<CharacterClass, Character['stats']> = {
     attack: 15,
     defense: 12,
     speed: 8,
+    evasion: 5,
+    critChance: 10,
+    luck: 5,
   },
   mage: {
     health: 80,
@@ -15,6 +18,9 @@ export const CLASS_STATS: Record<CharacterClass, Character['stats']> = {
     attack: 20,
     defense: 6,
     speed: 10,
+    evasion: 8,
+    critChance: 15,
+    luck: 7,
   },
   archer: {
     health: 100,
@@ -22,6 +28,9 @@ export const CLASS_STATS: Record<CharacterClass, Character['stats']> = {
     attack: 18,
     defense: 8,
     speed: 14,
+    evasion: 12,
+    critChance: 20,
+    luck: 10,
   },
 };
 
@@ -42,13 +51,28 @@ export function createCharacter(name: string, characterClass: CharacterClass): C
   };
 }
 
-export function calculateDamage(attacker: Character, defender: Character): number {
+export function calculateDamage(attacker: Character, defender: Character): { damage: number; isCrit: boolean; isEvaded: boolean } {
+  // Check evasion
+  const evasionChance = defender.stats.evasion + (defender.stats.luck * 0.5);
+  if (Math.random() * 100 < evasionChance) {
+    return { damage: 0, isCrit: false, isEvaded: true };
+  }
+  
   const baseDamage = attacker.stats.attack;
   const defense = defender.stats.defense;
   const randomFactor = 0.8 + Math.random() * 0.4; // 80% to 120%
   
-  const damage = Math.max(1, Math.floor((baseDamage - defense * 0.5) * randomFactor));
-  return damage;
+  let damage = Math.max(1, Math.floor((baseDamage - defense * 0.5) * randomFactor));
+  
+  // Check critical hit
+  const critChance = attacker.stats.critChance + (attacker.stats.luck * 0.5);
+  const isCrit = Math.random() * 100 < critChance;
+  
+  if (isCrit) {
+    damage = Math.floor(damage * 2);
+  }
+  
+  return { damage, isCrit, isEvaded: false };
 }
 
 export function checkLevelUp(character: Character): boolean {
@@ -64,12 +88,15 @@ export function levelUpCharacter(character: Character, statChoice: StatType): Ch
   switch (statChoice) {
     case 'attack':
       newChar.stats.attack += 3;
+      newChar.stats.critChance += 1;
       break;
     case 'defense':
       newChar.stats.defense += 3;
+      newChar.stats.evasion += 1;
       break;
     case 'speed':
       newChar.stats.speed += 3;
+      newChar.stats.evasion += 2;
       break;
     case 'health':
       newChar.stats.maxHealth += 15;
@@ -118,6 +145,9 @@ export function createEnemyCharacter(playerLevel: number, opponentId?: string): 
   enemy.stats.attack = Math.floor(enemy.stats.attack * levelMultiplier * 0.90 * statModifiers.attackMod);
   enemy.stats.defense = Math.floor(enemy.stats.defense * levelMultiplier * 0.90 * statModifiers.defenseMod);
   enemy.stats.speed = Math.floor(enemy.stats.speed * levelMultiplier * statModifiers.speedMod);
+  enemy.stats.evasion = Math.floor(enemy.stats.evasion * levelMultiplier);
+  enemy.stats.critChance = Math.floor(enemy.stats.critChance * levelMultiplier);
+  enemy.stats.luck = Math.floor(enemy.stats.luck * levelMultiplier);
   
   return enemy;
 }

@@ -35,16 +35,28 @@ export function CombatArena({ player, opponentId, onCombatEnd }: CombatArenaProp
   const executeAttack = async (attacker: Character, defender: Character, isPlayer: boolean) => {
     setIsAttacking(true);
     
-    const damage = calculateDamage(attacker, defender);
+    const result = calculateDamage(attacker, defender);
     
     await new Promise((resolve) => setTimeout(resolve, 600));
     
-    if (isPlayer) {
-      setEnemyHealth((prev) => Math.max(0, prev - damage));
-      addLog(`${attacker.name} strikes for ${damage} damage!`, 'attack');
+    if (result.isEvaded) {
+      addLog(`${defender.name} evaded the attack!`, 'damage');
+      toast.info('Attack evaded!');
     } else {
-      setPlayerHealth((prev) => Math.max(0, prev - damage));
-      addLog(`${attacker.name} attacks for ${damage} damage!`, 'damage');
+      const attackType = attacker.class === 'fighter' ? '⚔️ slashes' : 
+                         attacker.class === 'mage' ? '✨ blasts' : 
+                         '🏹 shoots';
+      const critText = result.isCrit ? ' CRITICAL HIT!' : '';
+      
+      if (isPlayer) {
+        setEnemyHealth((prev) => Math.max(0, prev - result.damage));
+        addLog(`${attacker.name} ${attackType} for ${result.damage} damage!${critText}`, 'attack');
+        if (result.isCrit) toast.success('Critical Hit!');
+      } else {
+        setPlayerHealth((prev) => Math.max(0, prev - result.damage));
+        addLog(`${attacker.name} ${attackType} for ${result.damage} damage!${critText}`, 'damage');
+        if (result.isCrit) toast.error('Enemy Critical Hit!');
+      }
     }
     
     setIsAttacking(false);
@@ -151,6 +163,18 @@ export function CombatArena({ player, opponentId, onCombatEnd }: CombatArenaProp
                   <Zap className="w-3 h-3" />
                   <span>SPD: {player.stats.speed}</span>
                 </div>
+                <div className="flex items-center gap-1">
+                  <Zap className="w-3 h-3" />
+                  <span>EVA: {player.stats.evasion}%</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Sword className="w-3 h-3 text-destructive" />
+                  <span>CRIT: {player.stats.critChance}%</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Zap className="w-3 h-3 text-primary" />
+                  <span>LUCK: {player.stats.luck}</span>
+                </div>
               </div>
             </div>
 
@@ -195,6 +219,18 @@ export function CombatArena({ player, opponentId, onCombatEnd }: CombatArenaProp
                 <div className="flex items-center gap-1">
                   <Zap className="w-3 h-3" />
                   <span>SPD: {enemy.stats.speed}</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Zap className="w-3 h-3" />
+                  <span>EVA: {enemy.stats.evasion}%</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Sword className="w-3 h-3 text-destructive" />
+                  <span>CRIT: {enemy.stats.critChance}%</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Zap className="w-3 h-3 text-primary" />
+                  <span>LUCK: {enemy.stats.luck}</span>
                 </div>
               </div>
             </div>

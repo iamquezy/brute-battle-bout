@@ -1,13 +1,17 @@
 import { useState } from 'react';
 import { Character, StatType } from '@/types/game';
+import { Equipment, EquipmentSlots } from '@/types/equipment';
 import { CharacterCreation } from '@/components/CharacterCreation';
 import { OpponentSelection } from '@/components/OpponentSelection';
 import { CombatArena } from '@/components/CombatArena';
 import { LevelUpModal } from '@/components/LevelUpModal';
+import { Inventory } from '@/components/Inventory';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { createCharacter, levelUpCharacter, checkLevelUp } from '@/lib/gameLogic';
-import { Trophy, Swords } from 'lucide-react';
+import { generateEquipment, shouldDropLoot, calculateEquipmentStats } from '@/lib/equipmentLogic';
+import { Trophy, Swords, Backpack } from 'lucide-react';
+import { toast } from 'sonner';
 
 type GameState = 'creation' | 'hub' | 'opponent-selection' | 'combat' | 'levelup';
 
@@ -16,6 +20,13 @@ const Index = () => {
   const [player, setPlayer] = useState<Character | null>(null);
   const [pendingLevelUp, setPendingLevelUp] = useState(false);
   const [selectedOpponentId, setSelectedOpponentId] = useState<string | undefined>(undefined);
+  const [inventory, setInventory] = useState<Equipment[]>([]);
+  const [equippedItems, setEquippedItems] = useState<EquipmentSlots>({
+    weapon: null,
+    armor: null,
+    accessory: null,
+  });
+  const [showInventory, setShowInventory] = useState(false);
 
   const handleCreateCharacter = (name: string, characterClass: Character['class']) => {
     const newCharacter = createCharacter(name, characterClass);
@@ -32,6 +43,18 @@ const Index = () => {
       updatedPlayer.stats.health = updatedPlayer.stats.maxHealth; // Heal after victory
       
       setPlayer(updatedPlayer);
+      
+      // Check for equipment drop
+      if (shouldDropLoot()) {
+        const loot = generateEquipment(
+          ['weapon', 'armor', 'accessory'][Math.floor(Math.random() * 3)] as any,
+          player.class
+        );
+        setInventory(prev => [...prev, loot]);
+        toast.success(`Found ${loot.name}!`, {
+          description: 'Check your inventory to equip it.',
+        });
+      }
       
       if (checkLevelUp(updatedPlayer)) {
         setPendingLevelUp(true);
@@ -68,6 +91,76 @@ const Index = () => {
 
   const handleCancelOpponentSelection = () => {
     setGameState('hub');
+  };
+
+  const handleEquip = (item: Equipment) => {
+    const currentItem = equippedItems[item.type];
+    
+    // Unequip current item if exists
+    if (currentItem) {
+      setInventory(prev => [...prev, currentItem]);
+    }
+    
+    // Equip new item
+    setEquippedItems(prev => ({
+      ...prev,
+      [item.type]: item,
+    }));
+    
+    // Remove from inventory
+    setInventory(prev => prev.filter(i => i.id !== item.id));
+    
+    // Apply stats to player
+    if (player) {
+      const allEquipment = Object.values({ ...equippedItems, [item.type]: item }).filter(Boolean) as Equipment[];
+      const equipStats = calculateEquipmentStats(allEquipment);
+      
+      const updatedPlayer = { ...player };
+      Object.entries(equipStats).forEach(([key, value]) => {
+        if (key in updatedPlayer.stats) {
+          (updatedPlayer.stats as any)[key] += value;
+        }
+      });
+      
+      setPlayer(updatedPlayer);
+    }
+    
+    toast.success(`Equipped ${item.name}`);
+  };
+
+  const handleUnequip = (slot: keyof EquipmentSlots) => {
+    const item = equippedItems[slot];
+    if (!item || !player) return;
+    
+    // Add to inventory
+    setInventory(prev => [...prev, item]);
+    
+    // Remove stats from player
+    const allEquipment = Object.values({ ...equippedItems, [slot]: null }).filter(Boolean) as Equipment[];
+    const equipStats = calculateEquipmentStats(allEquipment);
+    
+    // Recalculate base stats
+    const basePlayer = createCharacter(player.name, player.class);
+    const updatedPlayer = { ...basePlayer };
+    updatedPlayer.level = player.level;
+    updatedPlayer.experience = player.experience;
+    
+    // Reapply equipment stats
+    Object.entries(equipStats).forEach(([key, value]) => {
+      if (key in updatedPlayer.stats) {
+        (updatedPlayer.stats as any)[key] += value;
+      }
+    });
+    
+    setPlayer(updatedPlayer);
+    
+    // Unequip
+    setEquippedItems(prev => ({
+      ...prev,
+      [slot]: null,
+    }));
+    
+    toast.info(`Unequipped ${item.name}`);
   };
 
   if (gameState === 'creation') {
@@ -153,6 +246,18 @@ const Index = () => {
                     <p className="text-sm text-muted-foreground">Speed</p>
                     <p className="text-xl font-bold">{player.stats.speed}</p>
                   </div>
+                  <div className="text-center">
+                    <p className="text-sm text-muted-foreground">Evasion</p>
+                    <p className="text-xl font-bold">{player.stats.evasion}%</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-sm text-muted-foreground">Crit Chance</p>
+                    <p className="text-xl font-bold">{player.stats.critChance}%</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-sm text-muted-foreground">Luck</p>
+                    <p className="text-xl font-bold">{player.stats.luck}</p>
+                  </div>
                 </div>
               </div>
             </Card>
@@ -164,7 +269,26 @@ const Index = () => {
               <Swords className="w-5 h-5 mr-2" />
               Enter the Arena
             </Button>
+            
+            <Button
+              onClick={() => setShowInventory(true)}
+              variant="outline"
+              className="w-full h-12 text-lg font-bold"
+            >
+              <Backpack className="w-5 h-5 mr-2" />
+              Inventory ({inventory.length + Object.values(equippedItems).filter(Boolean).length})
+            </Button>
           </div>
+          
+          {showInventory && (
+            <Inventory
+              inventory={inventory}
+              equippedItems={equippedItems}
+              onEquip={handleEquip}
+              onUnequip={handleUnequip}
+              onClose={() => setShowInventory(false)}
+            />
+          )}
         </Card>
       </div>
     );

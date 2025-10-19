@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { CharacterClass } from '@/types/game';
 import { PRE_MADE_FIGHTERS } from '@/types/fighters';
 import { Sword, Wand2, Target, Shield, Zap, Heart } from 'lucide-react';
@@ -16,18 +17,19 @@ const CLASS_ICONS = {
 };
 
 const CLASS_STATS = {
-  fighter: { attack: 15, defense: 12, speed: 8, health: 120 },
-  mage: { attack: 20, defense: 6, speed: 10, health: 80 },
-  archer: { attack: 18, defense: 8, speed: 14, health: 100 },
+  fighter: { attack: 15, defense: 12, speed: 8, health: 120, evasion: 5, critChance: 10, luck: 5 },
+  mage: { attack: 20, defense: 6, speed: 10, health: 80, evasion: 8, critChance: 15, luck: 7 },
+  archer: { attack: 18, defense: 8, speed: 14, health: 100, evasion: 12, critChance: 20, luck: 10 },
 };
 
 export function CharacterCreation({ onCreateCharacter }: CharacterCreationProps) {
   const [selectedFighter, setSelectedFighter] = useState<string | null>(null);
+  const [customName, setCustomName] = useState<string>('');
 
   const handleSelectFighter = (fighterId: string) => {
     const fighter = PRE_MADE_FIGHTERS.find(f => f.id === fighterId);
-    if (fighter) {
-      onCreateCharacter(fighter.name, fighter.class);
+    if (fighter && customName.trim()) {
+      onCreateCharacter(customName.trim(), fighter.class);
     }
   };
 
@@ -46,7 +48,17 @@ export function CharacterCreation({ onCreateCharacter }: CharacterCreationProps)
           <h1 className="text-5xl font-bold bg-gradient-gold bg-clip-text text-transparent mb-2">
             Choose Your Fighter
           </h1>
-          <p className="text-muted-foreground text-lg">Select your champion and enter the arena</p>
+          <p className="text-muted-foreground text-lg mb-6">Select your champion and enter the arena</p>
+          
+          <div className="max-w-md mx-auto">
+            <Input
+              type="text"
+              placeholder="Enter your character's name..."
+              value={customName}
+              onChange={(e) => setCustomName(e.target.value)}
+              className="text-lg h-14 text-center border-2 border-primary/30 focus:border-primary bg-card/50"
+            />
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -129,7 +141,7 @@ export function CharacterCreation({ onCreateCharacter }: CharacterCreationProps)
 
         <Button
           onClick={() => selectedFighter && handleSelectFighter(selectedFighter)}
-          disabled={!selectedFighter}
+          disabled={!selectedFighter || !customName.trim()}
           className="w-full h-14 text-lg font-bold bg-gradient-gold text-primary-foreground hover:opacity-90 transition-opacity mt-8"
         >
           Enter the Arena

@@ -14,6 +14,9 @@ export interface Character {
     attack: number;
     defense: number;
     speed: number;
+    evasion: number;
+    critChance: number;
+    luck: number;
   };
 }
 
