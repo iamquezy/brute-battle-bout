@@ -9,11 +9,12 @@ import { toast } from 'sonner';
 
 interface CombatArenaProps {
   player: Character;
+  opponentId?: string;
   onCombatEnd: (victory: boolean, expGained: number) => void;
 }
 
-export function CombatArena({ player, onCombatEnd }: CombatArenaProps) {
-  const [enemy, setEnemy] = useState<Character>(() => createEnemyCharacter(player.level));
+export function CombatArena({ player, opponentId, onCombatEnd }: CombatArenaProps) {
+  const [enemy, setEnemy] = useState<Character>(() => createEnemyCharacter(player.level, opponentId));
   const [playerHealth, setPlayerHealth] = useState(player.stats.health);
   const [enemyHealth, setEnemyHealth] = useState(enemy.stats.health);
   const [combatLogs, setCombatLogs] = useState<CombatLog[]>([]);

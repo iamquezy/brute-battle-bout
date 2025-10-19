@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Character, StatType } from '@/types/game';
 import { CharacterCreation } from '@/components/CharacterCreation';
+import { OpponentSelection } from '@/components/OpponentSelection';
 import { CombatArena } from '@/components/CombatArena';
 import { LevelUpModal } from '@/components/LevelUpModal';
 import { Button } from '@/components/ui/button';
@@ -8,12 +9,13 @@ import { Card } from '@/components/ui/card';
 import { createCharacter, levelUpCharacter, checkLevelUp } from '@/lib/gameLogic';
 import { Trophy, Swords } from 'lucide-react';
 
-type GameState = 'creation' | 'hub' | 'combat' | 'levelup';
+type GameState = 'creation' | 'hub' | 'opponent-selection' | 'combat' | 'levelup';
 
 const Index = () => {
   const [gameState, setGameState] = useState<GameState>('creation');
   const [player, setPlayer] = useState<Character | null>(null);
   const [pendingLevelUp, setPendingLevelUp] = useState(false);
+  const [selectedOpponentId, setSelectedOpponentId] = useState<string | undefined>(undefined);
 
   const handleCreateCharacter = (name: string, characterClass: Character['class']) => {
     const newCharacter = createCharacter(name, characterClass);
@@ -56,15 +58,34 @@ const Index = () => {
   };
 
   const startNewBattle = () => {
+    setGameState('opponent-selection');
+  };
+
+  const handleOpponentSelected = (opponentId: string) => {
+    setSelectedOpponentId(opponentId);
     setGameState('combat');
+  };
+
+  const handleCancelOpponentSelection = () => {
+    setGameState('hub');
   };
 
   if (gameState === 'creation') {
     return <CharacterCreation onCreateCharacter={handleCreateCharacter} />;
   }
 
+  if (gameState === 'opponent-selection' && player) {
+    return (
+      <OpponentSelection
+        playerLevel={player.level}
+        onSelectOpponent={handleOpponentSelected}
+        onCancel={handleCancelOpponentSelection}
+      />
+    );
+  }
+
   if (gameState === 'combat' && player) {
-    return <CombatArena player={player} onCombatEnd={handleCombatEnd} />;
+    return <CombatArena player={player} opponentId={selectedOpponentId} onCombatEnd={handleCombatEnd} />;
   }
 
   if (gameState === 'levelup' && player) {

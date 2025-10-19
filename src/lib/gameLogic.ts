@@ -85,20 +85,39 @@ export function determineFirstAttacker(char1: Character, char2: Character): 'pla
   return Math.random() > 0.5 ? 'player' : 'enemy';
 }
 
-export function createEnemyCharacter(playerLevel: number): Character {
+export function createEnemyCharacter(playerLevel: number, opponentId?: string): Character {
   const classes: CharacterClass[] = ['fighter', 'mage', 'archer'];
   const randomClass = classes[Math.floor(Math.random() * classes.length)];
   
-  const enemy = createCharacter('Enemy Warrior', randomClass);
+  let enemy = createCharacter('Enemy Warrior', randomClass);
+  let statModifiers = {
+    healthMod: 1,
+    attackMod: 1,
+    defenseMod: 1,
+    speedMod: 1,
+  };
+  
+  // If a specific opponent is chosen, use their stats
+  if (opponentId) {
+    const { PRE_MADE_OPPONENTS } = require('../types/opponents');
+    const opponent = PRE_MADE_OPPONENTS.find((o: any) => o.id === opponentId);
+    if (opponent) {
+      enemy = createCharacter(opponent.name, opponent.class);
+      statModifiers = opponent.statModifiers;
+    }
+  }
+  
   enemy.level = playerLevel;
   
-  // More balanced scaling - slightly weaker than player
+  // Base balanced scaling
   const levelMultiplier = 1 + (playerLevel - 1) * 0.12;
-  enemy.stats.health = Math.floor(enemy.stats.health * levelMultiplier * 0.95);
+  
+  // Apply level and opponent-specific modifiers
+  enemy.stats.health = Math.floor(enemy.stats.health * levelMultiplier * 0.95 * statModifiers.healthMod);
   enemy.stats.maxHealth = enemy.stats.health;
-  enemy.stats.attack = Math.floor(enemy.stats.attack * levelMultiplier * 0.90);
-  enemy.stats.defense = Math.floor(enemy.stats.defense * levelMultiplier * 0.90);
-  enemy.stats.speed = Math.floor(enemy.stats.speed * levelMultiplier);
+  enemy.stats.attack = Math.floor(enemy.stats.attack * levelMultiplier * 0.90 * statModifiers.attackMod);
+  enemy.stats.defense = Math.floor(enemy.stats.defense * levelMultiplier * 0.90 * statModifiers.defenseMod);
+  enemy.stats.speed = Math.floor(enemy.stats.speed * levelMultiplier * statModifiers.speedMod);
   
   return enemy;
 }
