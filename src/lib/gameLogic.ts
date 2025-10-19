@@ -92,12 +92,12 @@ export function createEnemyCharacter(playerLevel: number): Character {
   const enemy = createCharacter('Enemy Warrior', randomClass);
   enemy.level = playerLevel;
   
-  // Scale stats based on level
-  const levelMultiplier = 1 + (playerLevel - 1) * 0.15;
-  enemy.stats.health = Math.floor(enemy.stats.health * levelMultiplier);
+  // More balanced scaling - slightly weaker than player
+  const levelMultiplier = 1 + (playerLevel - 1) * 0.12;
+  enemy.stats.health = Math.floor(enemy.stats.health * levelMultiplier * 0.95);
   enemy.stats.maxHealth = enemy.stats.health;
-  enemy.stats.attack = Math.floor(enemy.stats.attack * levelMultiplier);
-  enemy.stats.defense = Math.floor(enemy.stats.defense * levelMultiplier);
+  enemy.stats.attack = Math.floor(enemy.stats.attack * levelMultiplier * 0.90);
+  enemy.stats.defense = Math.floor(enemy.stats.defense * levelMultiplier * 0.90);
   enemy.stats.speed = Math.floor(enemy.stats.speed * levelMultiplier);
   
   return enemy;
