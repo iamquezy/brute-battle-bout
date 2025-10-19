@@ -6,10 +6,12 @@ import { OpponentSelection } from '@/components/OpponentSelection';
 import { CombatArena } from '@/components/CombatArena';
 import { LevelUpModal } from '@/components/LevelUpModal';
 import { Inventory } from '@/components/Inventory';
+import { Skills } from '@/components/Skills';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { createCharacter, levelUpCharacter, checkLevelUp } from '@/lib/gameLogic';
 import { generateEquipment, shouldDropLoot, calculateEquipmentStats } from '@/lib/equipmentLogic';
+import { getRandomSkill, getSkillById } from '@/lib/skillsData';
 import { Trophy, Swords, Backpack } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -33,6 +35,7 @@ const Index = () => {
     accessory: null,
   });
   const [battleHistory, setBattleHistory] = useState<BattleRecord[]>([]);
+  const [acquiredSkills, setAcquiredSkills] = useState<string[]>([]);
 
   const handleCreateCharacter = (name: string, characterClass: Character['class']) => {
     const newCharacter = createCharacter(name, characterClass);
@@ -90,6 +93,32 @@ const Index = () => {
     
     const leveledUpPlayer = levelUpCharacter(player, stat);
     setPlayer(leveledUpPlayer);
+    
+    // 30% chance to gain a skill on level up
+    if (Math.random() < 0.3) {
+      const newSkill = getRandomSkill(acquiredSkills);
+      setAcquiredSkills(prev => [...prev, newSkill.id]);
+      
+      // Apply skill effects to player
+      if (newSkill.effect) {
+        if (newSkill.effect.attack) leveledUpPlayer.stats.attack += newSkill.effect.attack;
+        if (newSkill.effect.defense) leveledUpPlayer.stats.defense += newSkill.effect.defense;
+        if (newSkill.effect.speed) leveledUpPlayer.stats.speed += newSkill.effect.speed;
+        if (newSkill.effect.health) {
+          leveledUpPlayer.stats.maxHealth += newSkill.effect.health;
+          leveledUpPlayer.stats.health = leveledUpPlayer.stats.maxHealth;
+        }
+        if (newSkill.effect.evasion) leveledUpPlayer.stats.evasion += newSkill.effect.evasion;
+        if (newSkill.effect.critChance) leveledUpPlayer.stats.critChance += newSkill.effect.critChance;
+        if (newSkill.effect.luck) leveledUpPlayer.stats.luck += newSkill.effect.luck;
+      }
+      
+      setPlayer(leveledUpPlayer);
+      toast.success(`New Skill: ${newSkill.name}!`, {
+        description: newSkill.description,
+      });
+    }
+    
     setPendingLevelUp(false);
     setGameState('hub');
   };
@@ -239,83 +268,44 @@ const Index = () => {
 
         {/* Main Layout: 3 columns */}
         <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left: Equipment */}
+          {/* Left: Battle History */}
           <Card className="p-6 bg-card/95 backdrop-blur-sm border-2 border-primary/30 shadow-combat">
             <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-              <Backpack className="w-6 h-6 text-primary" />
-              Equipment
+              <Trophy className="w-6 h-6 text-primary" />
+              Battle History
             </h2>
-            
-            {/* Equipped Items */}
-            <div className="mb-6">
-              <h3 className="text-lg font-bold mb-3">Equipped</h3>
-              <div className="space-y-2">
-                {(['weapon', 'armor', 'accessory'] as const).map((slot) => {
-                  const item = equippedItems[slot];
-                  return (
-                    <div key={slot} className="p-3 bg-secondary/50 rounded-lg border border-border">
-                      <div className="text-xs text-muted-foreground capitalize mb-1">{slot}</div>
-                      {item ? (
-                        <div>
-                          <p className={`text-sm font-bold ${
-                            item.rarity === 'legendary' ? 'text-[hsl(var(--rarity-legendary))]' :
-                            item.rarity === 'epic' ? 'text-[hsl(var(--rarity-epic))]' :
-                            item.rarity === 'rare' ? 'text-[hsl(var(--rarity-rare))]' :
-                            item.rarity === 'uncommon' ? 'text-[hsl(var(--rarity-uncommon))]' :
-                            'text-[hsl(var(--rarity-common))]'
-                          }`}>
-                            {item.name}
-                          </p>
-                        </div>
-                      ) : (
-                        <p className="text-xs text-muted-foreground">Empty</p>
-                      )}
-                    </div>
-                  );
-                })}
+            <div className="space-y-2 mb-4">
+              <div className="flex justify-between text-lg font-bold">
+                <span className="text-green-400">Victories: {wins}</span>
+                <span className="text-red-400">Defeats: {losses}</span>
+              </div>
+              <div className="text-sm text-muted-foreground text-center">
+                Win Rate: {battleHistory.length > 0 ? Math.round((wins / battleHistory.length) * 100) : 0}%
               </div>
             </div>
-
-            {/* Inventory Items */}
-            <div>
-              <h3 className="text-lg font-bold mb-3">Inventory ({inventory.length})</h3>
-              <div className="space-y-2 max-h-[300px] overflow-y-auto">
-                {inventory.length === 0 ? (
-                  <p className="text-muted-foreground text-center py-4 text-sm">
-                    Defeat enemies to find loot!
-                  </p>
-                ) : (
-                  inventory.slice(0, 5).map((item) => (
-                    <div
-                      key={item.id}
-                      className={`p-2 rounded-lg border-2 cursor-pointer hover:scale-105 transition-transform ${
-                        item.rarity === 'legendary' ? 'border-[hsl(var(--rarity-legendary))]' :
-                        item.rarity === 'epic' ? 'border-[hsl(var(--rarity-epic))]' :
-                        item.rarity === 'rare' ? 'border-[hsl(var(--rarity-rare))]' :
-                        item.rarity === 'uncommon' ? 'border-[hsl(var(--rarity-uncommon))]' :
-                        'border-[hsl(var(--rarity-common))]'
-                      }`}
-                      onClick={() => handleEquip(item)}
-                    >
-                      <p className="text-sm font-bold">{item.name}</p>
-                      <p className="text-xs text-muted-foreground capitalize">{item.type}</p>
+            <div className="space-y-2 max-h-[400px] overflow-y-auto">
+              {battleHistory.length === 0 ? (
+                <p className="text-muted-foreground text-center py-4">No battles yet</p>
+              ) : (
+                battleHistory.map((battle, idx) => (
+                  <div
+                    key={idx}
+                    className={`p-3 rounded border-2 ${
+                      battle.result === 'victory'
+                        ? 'bg-green-500/10 border-green-500/30'
+                        : 'bg-red-500/10 border-red-500/30'
+                    }`}
+                  >
+                    <div className="flex justify-between items-center">
+                      <span className="font-bold text-sm">{battle.opponent}</span>
+                      <span className={`text-xs font-bold uppercase ${
+                        battle.result === 'victory' ? 'text-green-400' : 'text-red-400'
+                      }`}>
+                        {battle.result}
+                      </span>
                     </div>
-                  ))
-                )}
-              </div>
-              {inventory.length > 5 && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    // Open full inventory modal
-                    const modal = document.createElement('div');
-                    document.body.appendChild(modal);
-                  }}
-                  className="w-full mt-3"
-                >
-                  View All ({inventory.length})
-                </Button>
+                  </div>
+                ))
               )}
             </div>
           </Card>
@@ -379,47 +369,91 @@ const Index = () => {
             </div>
           </Card>
 
-          {/* Right: Battle History */}
-          <Card className="p-6 bg-card/95 backdrop-blur-sm border-2 border-primary/30 shadow-combat">
-            <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-              <Trophy className="w-6 h-6 text-primary" />
-              Battle History
-            </h2>
-            <div className="space-y-2 mb-4">
-              <div className="flex justify-between text-lg font-bold">
-                <span className="text-green-400">Victories: {wins}</span>
-                <span className="text-red-400">Defeats: {losses}</span>
+          {/* Right: Equipment & Skills */}
+          <div className="space-y-6">
+            <Card className="p-4 bg-card/95 backdrop-blur-sm border-2 border-primary/30 shadow-combat">
+              <h2 className="text-xl font-bold mb-3 flex items-center gap-2">
+                <Backpack className="w-5 h-5 text-primary" />
+                Equipment
+              </h2>
+              
+              {/* Equipped Items */}
+              <div className="mb-4">
+                <h3 className="text-sm font-bold mb-2">Equipped</h3>
+                <div className="space-y-1.5">
+                  {(['weapon', 'armor', 'accessory'] as const).map((slot) => {
+                    const item = equippedItems[slot];
+                    return (
+                      <div key={slot} className="p-2 bg-secondary/50 rounded border border-border">
+                        <div className="text-xs text-muted-foreground capitalize mb-0.5">{slot}</div>
+                        {item ? (
+                          <div>
+                            <p className={`text-xs font-bold ${
+                              item.rarity === 'legendary' ? 'text-[hsl(var(--rarity-legendary))]' :
+                              item.rarity === 'epic' ? 'text-[hsl(var(--rarity-epic))]' :
+                              item.rarity === 'rare' ? 'text-[hsl(var(--rarity-rare))]' :
+                              item.rarity === 'uncommon' ? 'text-[hsl(var(--rarity-uncommon))]' :
+                              'text-[hsl(var(--rarity-common))]'
+                            }`}>
+                              {item.name}
+                            </p>
+                          </div>
+                        ) : (
+                          <p className="text-xs text-muted-foreground">Empty</p>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
-              <div className="text-sm text-muted-foreground text-center">
-                Win Rate: {battleHistory.length > 0 ? Math.round((wins / battleHistory.length) * 100) : 0}%
-              </div>
-            </div>
-            <div className="space-y-2 max-h-[400px] overflow-y-auto">
-              {battleHistory.length === 0 ? (
-                <p className="text-muted-foreground text-center py-4">No battles yet</p>
-              ) : (
-                battleHistory.map((battle, idx) => (
-                  <div
-                    key={idx}
-                    className={`p-3 rounded border-2 ${
-                      battle.result === 'victory'
-                        ? 'bg-green-500/10 border-green-500/30'
-                        : 'bg-red-500/10 border-red-500/30'
-                    }`}
+
+              {/* Inventory Items */}
+              <div>
+                <h3 className="text-sm font-bold mb-2">Inventory ({inventory.length})</h3>
+                <div className="space-y-1.5 max-h-[150px] overflow-y-auto">
+                  {inventory.length === 0 ? (
+                    <p className="text-muted-foreground text-center py-2 text-xs">
+                      Defeat enemies to find loot!
+                    </p>
+                  ) : (
+                    inventory.slice(0, 3).map((item) => (
+                      <div
+                        key={item.id}
+                        className={`p-1.5 rounded border-2 cursor-pointer hover:scale-105 transition-transform ${
+                          item.rarity === 'legendary' ? 'border-[hsl(var(--rarity-legendary))]' :
+                          item.rarity === 'epic' ? 'border-[hsl(var(--rarity-epic))]' :
+                          item.rarity === 'rare' ? 'border-[hsl(var(--rarity-rare))]' :
+                          item.rarity === 'uncommon' ? 'border-[hsl(var(--rarity-uncommon))]' :
+                          'border-[hsl(var(--rarity-common))]'
+                        }`}
+                        onClick={() => handleEquip(item)}
+                      >
+                        <p className="text-xs font-bold">{item.name}</p>
+                        <p className="text-xs text-muted-foreground capitalize">{item.type}</p>
+                      </div>
+                    ))
+                  )}
+                </div>
+                {inventory.length > 3 && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      // Open full inventory modal
+                      const modal = document.createElement('div');
+                      document.body.appendChild(modal);
+                    }}
+                    className="w-full mt-2 text-xs h-7"
                   >
-                    <div className="flex justify-between items-center">
-                      <span className="font-bold text-sm">{battle.opponent}</span>
-                      <span className={`text-xs font-bold uppercase ${
-                        battle.result === 'victory' ? 'text-green-400' : 'text-red-400'
-                      }`}>
-                        {battle.result}
-                      </span>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </Card>
+                    View All ({inventory.length})
+                  </Button>
+                )}
+              </div>
+            </Card>
+
+            {/* Skills */}
+            <Skills acquiredSkills={acquiredSkills} />
+          </div>
         </div>
       </div>
     );

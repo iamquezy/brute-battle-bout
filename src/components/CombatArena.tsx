@@ -6,6 +6,15 @@ import { Character, CombatLog } from '@/types/game';
 import { calculateDamage, createEnemyCharacter, determineFirstAttacker } from '@/lib/gameLogic';
 import { Sword, Heart, Shield, Zap } from 'lucide-react';
 import { toast } from 'sonner';
+import { 
+  playSwordSlash, 
+  playBowShot, 
+  playSpellCast, 
+  playHitSound, 
+  playCriticalHit,
+  playVictory,
+  playDefeat 
+} from '@/lib/soundEffects';
 
 interface CombatArenaProps {
   player: Character;
@@ -35,6 +44,15 @@ export function CombatArena({ player, opponentId, onCombatEnd }: CombatArenaProp
   const executeAttack = async (attacker: Character, defender: Character, isPlayer: boolean) => {
     setIsAttacking(true);
     
+    // Play attack sound based on class
+    if (attacker.class === 'fighter') {
+      playSwordSlash();
+    } else if (attacker.class === 'mage') {
+      playSpellCast();
+    } else if (attacker.class === 'archer') {
+      playBowShot();
+    }
+    
     const result = calculateDamage(attacker, defender);
     
     await new Promise((resolve) => setTimeout(resolve, 600));
@@ -43,6 +61,13 @@ export function CombatArena({ player, opponentId, onCombatEnd }: CombatArenaProp
       addLog(`${defender.name} evaded the attack!`, 'damage');
       toast.info('Attack evaded!');
     } else {
+      // Play hit sound
+      if (result.isCrit) {
+        playCriticalHit();
+      } else {
+        playHitSound();
+      }
+      
       const attackType = attacker.class === 'fighter' ? '⚔️ slashes' : 
                          attacker.class === 'mage' ? '✨ blasts' : 
                          '🏹 shoots';
@@ -89,11 +114,13 @@ export function CombatArena({ player, opponentId, onCombatEnd }: CombatArenaProp
   useEffect(() => {
     if (playerHealth <= 0) {
       addLog('You have been defeated...', 'defeat');
+      playDefeat();
       toast.error('Defeat!');
       setTimeout(() => onCombatEnd(false, 0, enemy.name), 1500);
     } else if (enemyHealth <= 0) {
       const expGained = enemy.level * 50 + 25;
       addLog(`Victory! Gained ${expGained} experience!`, 'victory');
+      playVictory();
       toast.success(`Victory! +${expGained} EXP`);
       setTimeout(() => onCombatEnd(true, expGained, enemy.name), 1500);
     }
