@@ -17,10 +17,8 @@ export interface Skill {
     damageMultiplier?: number;
     damageReduction?: number;
   };
-  usesPerFight?: number; // For supers
 }
 
 export interface PlayerSkills {
-  acquired: string[]; // Array of skill IDs
-  active: string[]; // Currently active skills (for talents that can be toggled)
+  acquired: string[];
 }

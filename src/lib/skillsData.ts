@@ -165,51 +165,46 @@ export const ALL_SKILLS: Skill[] = [
     effect: { speed: 6, evasion: 4 },
   },
 
-  // Supers (5)
+  // Supers (5) - now permanent bonuses
   {
     id: 'fierce_brute',
     name: 'Fierce Brute',
     category: 'super',
-    description: 'Devastating power strike',
+    description: 'Devastating power',
     rarity: 'rare',
     effect: { attack: 10 },
-    usesPerFight: 2,
   },
   {
     id: 'hammer',
     name: 'Hammer',
     category: 'super',
-    description: 'Crushing blow',
+    description: 'Crushing strength',
     rarity: 'rare',
     effect: { attack: 8, defense: 3 },
-    usesPerFight: 3,
   },
   {
     id: 'flash_flood',
     name: 'Flash Flood',
     category: 'super',
-    description: 'Overwhelming assault',
+    description: 'Overwhelming power',
     rarity: 'epic',
     effect: { attack: 6, speed: 6 },
-    usesPerFight: 2,
   },
   {
     id: 'hypnosis',
     name: 'Hypnosis',
     category: 'super',
-    description: 'Confuse your enemy',
+    description: 'Confounding presence',
     rarity: 'epic',
-    effect: { evasion: 15 },
-    usesPerFight: 1,
+    effect: { evasion: 10, luck: 3 },
   },
   {
     id: 'tragic_potion',
     name: 'Tragic Potion',
     category: 'super',
-    description: 'Mysterious elixir',
+    description: 'Mysterious enhancement',
     rarity: 'rare',
     effect: { health: 25, attack: 5 },
-    usesPerFight: 1,
   },
 
   // Talents (3)

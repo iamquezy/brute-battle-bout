@@ -30,6 +30,7 @@ export function CombatArena({ player, opponentId, onCombatEnd }: CombatArenaProp
   const [isAttacking, setIsAttacking] = useState(false);
   const [currentTurn, setCurrentTurn] = useState<'player' | 'enemy' | null>(null);
   const [combatStarted, setCombatStarted] = useState(false);
+  const [combatEnded, setCombatEnded] = useState(false);
 
   const addLog = (message: string, type: CombatLog['type']) => {
     const log: CombatLog = {
@@ -95,8 +96,33 @@ export function CombatArena({ player, opponentId, onCombatEnd }: CombatArenaProp
     toast.success('The battle has begun!');
   };
 
+  const skipCombat = () => {
+    // Simulate instant combat resolution
+    setCombatEnded(true);
+    
+    // Simple win probability based on stats
+    const playerPower = player.stats.attack + player.stats.defense + player.stats.speed;
+    const enemyPower = enemy.stats.attack + enemy.stats.defense + enemy.stats.speed;
+    const winChance = playerPower / (playerPower + enemyPower);
+    
+    const playerWins = Math.random() < winChance;
+    
+    if (playerWins) {
+      const expGained = enemy.level * 50 + 25;
+      addLog(`Victory! Gained ${expGained} experience!`, 'victory');
+      playVictory();
+      toast.success(`Victory! +${expGained} EXP`);
+      setTimeout(() => onCombatEnd(true, expGained, enemy.name), 1000);
+    } else {
+      addLog('You have been defeated...', 'defeat');
+      playDefeat();
+      toast.error('Defeat!');
+      setTimeout(() => onCombatEnd(false, 0, enemy.name), 1000);
+    }
+  };
+
   useEffect(() => {
-    if (!combatStarted || !currentTurn || isAttacking) return;
+    if (!combatStarted || !currentTurn || isAttacking || combatEnded) return;
 
     const timer = setTimeout(async () => {
       if (currentTurn === 'player') {
@@ -112,19 +138,23 @@ export function CombatArena({ player, opponentId, onCombatEnd }: CombatArenaProp
   }, [currentTurn, combatStarted, isAttacking]);
 
   useEffect(() => {
+    if (combatEnded) return;
+    
     if (playerHealth <= 0) {
+      setCombatEnded(true);
       addLog('You have been defeated...', 'defeat');
       playDefeat();
       toast.error('Defeat!');
       setTimeout(() => onCombatEnd(false, 0, enemy.name), 1500);
     } else if (enemyHealth <= 0) {
+      setCombatEnded(true);
       const expGained = enemy.level * 50 + 25;
       addLog(`Victory! Gained ${expGained} experience!`, 'victory');
       playVictory();
       toast.success(`Victory! +${expGained} EXP`);
       setTimeout(() => onCombatEnd(true, expGained, enemy.name), 1500);
     }
-  }, [playerHealth, enemyHealth]);
+  }, [playerHealth, enemyHealth, combatEnded]);
 
   const getClassColor = (cls: Character['class']) => {
     switch (cls) {
@@ -264,15 +294,24 @@ export function CombatArena({ player, opponentId, onCombatEnd }: CombatArenaProp
           </div>
 
           {!combatStarted && (
-            <Button
-              onClick={startCombat}
-              className="w-full h-12 text-lg font-bold bg-gradient-gold text-primary-foreground hover:opacity-90"
-            >
-              Start Combat
-            </Button>
+            <div className="flex gap-4">
+              <Button
+                onClick={startCombat}
+                className="flex-1 h-12 text-lg font-bold bg-gradient-gold text-primary-foreground hover:opacity-90"
+              >
+                Start Combat
+              </Button>
+              <Button
+                onClick={skipCombat}
+                variant="outline"
+                className="h-12 px-6 text-lg font-bold"
+              >
+                Skip
+              </Button>
+            </div>
           )}
 
-          {combatStarted && currentTurn && (
+          {combatStarted && currentTurn && !combatEnded && (
             <div className="text-center py-2 bg-secondary rounded-lg">
               <p className="text-lg font-semibold">
                 {currentTurn === 'player' ? player.name : enemy.name}'s Turn

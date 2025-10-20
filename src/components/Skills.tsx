@@ -77,11 +77,6 @@ export function Skills({ acquiredSkills }: SkillsProps) {
                         {skill.effect.luck && <p>+{skill.effect.luck} Luck</p>}
                       </div>
                     )}
-                    {skill.usesPerFight && (
-                      <p className="text-xs text-primary pt-1">
-                        Uses: {skill.usesPerFight} per fight
-                      </p>
-                    )}
                   </div>
                 </TooltipContent>
               </Tooltip>

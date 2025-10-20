@@ -185,32 +185,29 @@ const Index = () => {
     // Remove from inventory
     setInventory(prev => prev.filter(i => i.id !== item.id));
     
-    // Recalculate stats from base
-    const basePlayer = createCharacter(player.name, player.class);
-    const updatedPlayer = { ...basePlayer };
-    updatedPlayer.level = player.level;
-    updatedPlayer.experience = player.experience;
+    // Apply equipment stats to current player (additive)
+    const updatedPlayer = { ...player };
     
-    // Apply all equipment stats
-    const allEquipment = Object.values(newEquippedItems).filter(Boolean) as Equipment[];
-    const equipStats = calculateEquipmentStats(allEquipment);
+    // Remove old item stats if any
+    if (currentItem && currentItem.stats) {
+      Object.entries(currentItem.stats).forEach(([key, value]) => {
+        if (value && key in updatedPlayer.stats) {
+          (updatedPlayer.stats as any)[key] -= value;
+        }
+      });
+    }
     
-    Object.entries(equipStats).forEach(([key, value]) => {
-      if (key in updatedPlayer.stats) {
-        (updatedPlayer.stats as any)[key] += value;
-      }
-    });
-
-    // Apply skill bonuses
-    const skillBonuses = calculateSkillBonuses();
-    updatedPlayer.stats.attack += skillBonuses.attack;
-    updatedPlayer.stats.defense += skillBonuses.defense;
-    updatedPlayer.stats.speed += skillBonuses.speed;
-    updatedPlayer.stats.maxHealth += skillBonuses.maxHealth;
+    // Add new item stats
+    if (item.stats) {
+      Object.entries(item.stats).forEach(([key, value]) => {
+        if (value && key in updatedPlayer.stats) {
+          (updatedPlayer.stats as any)[key] += value;
+        }
+      });
+    }
+    
+    // Ensure health doesn't exceed maxHealth
     updatedPlayer.stats.health = Math.min(updatedPlayer.stats.health, updatedPlayer.stats.maxHealth);
-    updatedPlayer.stats.evasion += skillBonuses.evasion;
-    updatedPlayer.stats.critChance += skillBonuses.critChance;
-    updatedPlayer.stats.luck += skillBonuses.luck;
     
     setPlayer(updatedPlayer);
     
@@ -224,33 +221,19 @@ const Index = () => {
     // Add to inventory
     setInventory(prev => [...prev, item]);
     
-    // Remove stats from player
-    const allEquipment = Object.values({ ...equippedItems, [slot]: null }).filter(Boolean) as Equipment[];
-    const equipStats = calculateEquipmentStats(allEquipment);
+    // Remove item stats from player (subtractive)
+    const updatedPlayer = { ...player };
     
-    // Recalculate base stats
-    const basePlayer = createCharacter(player.name, player.class);
-    const updatedPlayer = { ...basePlayer };
-    updatedPlayer.level = player.level;
-    updatedPlayer.experience = player.experience;
+    if (item.stats) {
+      Object.entries(item.stats).forEach(([key, value]) => {
+        if (value && key in updatedPlayer.stats) {
+          (updatedPlayer.stats as any)[key] -= value;
+        }
+      });
+    }
     
-    // Reapply equipment stats
-    Object.entries(equipStats).forEach(([key, value]) => {
-      if (key in updatedPlayer.stats) {
-        (updatedPlayer.stats as any)[key] += value;
-      }
-    });
-
-    // Apply skill bonuses
-    const skillBonuses = calculateSkillBonuses();
-    updatedPlayer.stats.attack += skillBonuses.attack;
-    updatedPlayer.stats.defense += skillBonuses.defense;
-    updatedPlayer.stats.speed += skillBonuses.speed;
-    updatedPlayer.stats.maxHealth += skillBonuses.maxHealth;
+    // Ensure health doesn't exceed maxHealth
     updatedPlayer.stats.health = Math.min(updatedPlayer.stats.health, updatedPlayer.stats.maxHealth);
-    updatedPlayer.stats.evasion += skillBonuses.evasion;
-    updatedPlayer.stats.critChance += skillBonuses.critChance;
-    updatedPlayer.stats.luck += skillBonuses.luck;
     
     setPlayer(updatedPlayer);
     
