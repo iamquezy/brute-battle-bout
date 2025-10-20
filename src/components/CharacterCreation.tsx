@@ -6,6 +6,9 @@ import { Label } from '@/components/ui/label';
 import { CharacterClass } from '@/types/game';
 import { Swords, Wand2, Target, Shield, Zap, Heart } from 'lucide-react';
 import { CLASS_DESCRIPTIONS } from '@/lib/gameLogic';
+import warriorAvatar from '@/assets/avatars/warrior.png';
+import mageAvatar from '@/assets/avatars/mage.png';
+import archerAvatar from '@/assets/avatars/archer.png';
 
 interface CharacterCreationProps {
   onCreateCharacter: (name: string, characterClass: CharacterClass) => void;
@@ -21,14 +24,17 @@ const CLASS_INFO = {
   fighter: {
     name: 'The Steel Wall',
     icon: Swords,
+    avatar: warriorAvatar,
   },
   mage: {
     name: 'The Arcane Master',
     icon: Wand2,
+    avatar: mageAvatar,
   },
   archer: {
     name: 'The Swift Arrow',
     icon: Target,
+    avatar: archerAvatar,
   },
 };
 
@@ -92,11 +98,14 @@ export function CharacterCreation({ onCreateCharacter }: CharacterCreationProps)
                 onClick={() => setSelectedClass(classType)}
               >
                 <div className="text-center space-y-4">
-                  <div className={`
-                    w-24 h-24 mx-auto rounded-full ${getClassGradient(classType)} 
-                    flex items-center justify-center animate-glow-pulse
-                  `}>
-                    <Icon className="w-12 h-12 text-white" />
+                  <div className="relative w-32 h-32 mx-auto">
+                    <img 
+                      src={CLASS_INFO[classType].avatar} 
+                      alt={`${classType} avatar`}
+                      className={`w-full h-full object-cover rounded-full border-4 ${
+                        isSelected ? 'border-primary' : 'border-border'
+                      } animate-glow-pulse`}
+                    />
                   </div>
                   
                   <div>

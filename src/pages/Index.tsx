@@ -15,6 +15,9 @@ import { generateEquipment, shouldDropLoot, calculateEquipmentStats } from '@/li
 import { getRandomSkill, getSkillById } from '@/lib/skillsData';
 import { Trophy, Swords, Backpack } from 'lucide-react';
 import { toast } from 'sonner';
+import warriorAvatar from '@/assets/avatars/warrior.png';
+import mageAvatar from '@/assets/avatars/mage.png';
+import archerAvatar from '@/assets/avatars/archer.png';
 
 type GameState = 'creation' | 'hub' | 'opponent-selection' | 'combat' | 'levelup';
 
@@ -280,6 +283,15 @@ const Index = () => {
     const expProgress = (player.experience / expNeeded) * 100;
     const wins = battleHistory.filter(b => b.result === 'victory').length;
     const losses = battleHistory.filter(b => b.result === 'defeat').length;
+    
+    const getAvatarForClass = (characterClass: string) => {
+      switch (characterClass) {
+        case 'fighter': return warriorAvatar;
+        case 'mage': return mageAvatar;
+        case 'archer': return archerAvatar;
+        default: return warriorAvatar;
+      }
+    };
 
     return (
       <div className="min-h-screen bg-gradient-arena p-4">
@@ -346,6 +358,13 @@ const Index = () => {
           {/* Center: Character Stats */}
           <Card className="p-6 bg-card/95 backdrop-blur-sm border-2 border-primary/30 shadow-combat">
             <div className="text-center mb-6">
+              <div className="relative w-32 h-32 mx-auto mb-4">
+                <img 
+                  src={getAvatarForClass(player.class)} 
+                  alt={`${player.class} avatar`}
+                  className="w-full h-full object-cover rounded-full border-4 border-primary shadow-glow animate-glow-pulse"
+                />
+              </div>
               <h2 className="text-3xl font-bold mb-2">{player.name}</h2>
               <div className="inline-block px-4 py-2 rounded-full bg-gradient-gold text-primary-foreground font-bold text-lg">
                 Level {player.level}
