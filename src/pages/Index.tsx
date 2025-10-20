@@ -1,5 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Character, StatType } from '@/types/game';
+import { useAuth } from '@/hooks/useAuth';
+import { createProfile, loadProfile, saveProfile, updateLeaderboard } from '@/lib/profileSync';
 import { Equipment, EquipmentSlots } from '@/types/equipment';
 import { ShopItem, ActiveBuff } from '@/types/shop';
 import { Quest } from '@/types/quests';
@@ -32,7 +35,7 @@ import { ACHIEVEMENTS, TITLES } from '@/lib/achievementData';
 import { rollPetDrop, PET_LIBRARY } from '@/lib/petData';
 import { getSkillTreeForClass } from '@/lib/skillTreeData';
 import { saveGame, loadGame, clearGame } from '@/lib/saveGame';
-import { Trophy, Swords, Backpack, Store, Coins, Target, Award, Sparkles, Hammer, Zap, RotateCcw } from 'lucide-react';
+import { Trophy, Swords, Backpack, Store, Coins, Target, Award, Sparkles, Hammer, Zap, RotateCcw, LogOut } from 'lucide-react';
 import { toast } from 'sonner';
 import warriorAvatar from '@/assets/avatars/warrior.png';
 import mageAvatar from '@/assets/avatars/mage.png';
@@ -47,7 +50,10 @@ interface BattleRecord {
 }
 
 const Index = () => {
+  const navigate = useNavigate();
+  const { user, loading: authLoading, signOut } = useAuth();
   const [gameState, setGameState] = useState<GameState>('creation');
+  const [profileLoaded, setProfileLoaded] = useState(false);
   const [player, setPlayer] = useState<Character | null>(null);
   const [pendingLevelUp, setPendingLevelUp] = useState(false);
   const [selectedOpponentId, setSelectedOpponentId] = useState<string | undefined>(undefined);
@@ -100,7 +106,117 @@ const Index = () => {
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // Load game on mount
+  // Auth check and redirect
+  useEffect(() => {
+    if (!authLoading && !user) {
+      navigate('/auth');
+    }
+  }, [authLoading, user, navigate]);
+
+  // Load profile from cloud
+  useEffect(() => {
+    if (!user || profileLoaded) return;
+
+    const initializeProfile = async () => {
+      const profile = await loadProfile(user.id);
+      
+      if (!profile) {
+        // Create new profile with localStorage data if exists
+        const username = user.user_metadata?.username || 'Warrior';
+        await createProfile(user.id, username);
+        setProfileLoaded(true);
+        
+        // Load from localStorage if it exists
+        const savedGame = loadGame();
+        if (savedGame) {
+          setPlayer(savedGame.player);
+          setInventory(savedGame.inventory);
+          setEquippedItems(savedGame.equippedItems);
+          setBattleHistory(savedGame.battleHistory);
+          setAcquiredSkills(savedGame.acquiredSkills);
+          setActiveBuffs(savedGame.activeBuffs);
+          setDailyQuests(savedGame.dailyQuests);
+          setWeeklyQuests(savedGame.weeklyQuests);
+          setAchievements(savedGame.achievements);
+          setCurrentTitle(savedGame.equippedTitle);
+          setCollectedPets(savedGame.collectedPets);
+          setActivePet(savedGame.activePet);
+          setCraftingMaterials(savedGame.craftingMaterials);
+          setSkillTreeNodes(savedGame.skillTreeNodes);
+          setSkillPoints(savedGame.skillPoints);
+          setAchievementStats(savedGame.achievementStats);
+          setLastDailyReset(savedGame.lastDailyReset);
+          setLastWeeklyReset(savedGame.lastWeeklyReset);
+
+          // Check for quest resets
+          const now = Date.now();
+          const dayInMs = 24 * 60 * 60 * 1000;
+          const weekInMs = 7 * dayInMs;
+
+          if (now - savedGame.lastDailyReset > dayInMs) {
+            setDailyQuests(createDailyQuests());
+            setLastDailyReset(now);
+          }
+
+          if (now - savedGame.lastWeeklyReset > weekInMs) {
+            setWeeklyQuests(createWeeklyQuests());
+            setLastWeeklyReset(now);
+          }
+
+          if (savedGame.player) {
+            setGameState('hub');
+          }
+        }
+      } else {
+        // Load from cloud profile
+        const data = profile.character_data;
+        setPlayer(data.character);
+        setInventory(data.inventory);
+        setEquippedItems(data.equippedItems);
+        setBattleHistory(data.battleHistory);
+        setAcquiredSkills(data.acquiredSkills);
+        setActiveBuffs(data.activeBuffs);
+        setDailyQuests(data.dailyQuests);
+        setWeeklyQuests(data.weeklyQuests);
+        setAchievements(data.achievements);
+        setCurrentTitle(data.equippedTitle);
+        setCollectedPets(data.collectedPets);
+        setActivePet(data.activePet);
+        setCraftingMaterials(data.craftingMaterials);
+        setSkillTreeNodes(data.skillTreeNodes);
+        setSkillPoints(data.skillPoints);
+        setAchievementStats(data.achievementStats);
+        setLastDailyReset(data.lastDailyReset);
+        setLastWeeklyReset(data.lastWeeklyReset);
+
+        // Check for quest resets
+        const now = Date.now();
+        const dayInMs = 24 * 60 * 60 * 1000;
+        const weekInMs = 7 * dayInMs;
+
+        if (now - data.lastDailyReset > dayInMs) {
+          setDailyQuests(createDailyQuests());
+          setLastDailyReset(now);
+        }
+
+        if (now - data.lastWeeklyReset > weekInMs) {
+          setWeeklyQuests(createWeeklyQuests());
+          setLastWeeklyReset(now);
+        }
+
+        if (data.character) {
+          setGameState('hub');
+        }
+      }
+
+      setProfileLoaded(true);
+      setIsLoaded(true);
+    };
+
+    initializeProfile();
+  }, [user, profileLoaded]);
+
+  // Load game on mount (fallback for localStorage)
   useEffect(() => {
     const savedGame = loadGame();
     if (savedGame) {
@@ -171,6 +287,7 @@ const Index = () => {
         craftingMaterials,
         skillTreeNodes,
         skillPoints,
+        achievementStats,
         lastDailyReset,
         lastWeeklyReset,
       });

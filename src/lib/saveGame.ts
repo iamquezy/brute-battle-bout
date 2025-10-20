@@ -2,7 +2,7 @@ import { Character } from '@/types/game';
 import { Equipment } from '@/types/equipment';
 import { ShopItem, ActiveBuff } from '@/types/shop';
 import { Quest } from '@/types/quests';
-import { Achievement } from '@/types/achievements';
+import { Achievement, AchievementStats } from '@/types/achievements';
 import { Pet } from '@/types/pets';
 import { SkillTreeNode } from '@/types/skillTree';
 
@@ -42,6 +42,7 @@ export interface GameSaveState {
   };
   skillTreeNodes: SkillTreeNode[];
   skillPoints: number;
+  achievementStats: AchievementStats;
   lastDailyReset: number;
   lastWeeklyReset: number;
 }
