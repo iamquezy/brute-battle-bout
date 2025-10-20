@@ -16,6 +16,21 @@ import {
   playDefeat 
 } from '@/lib/soundEffects';
 
+// Arena backgrounds
+import arenaStone from '@/assets/arenas/arena-stone.jpg';
+import arenaForest from '@/assets/arenas/arena-forest.jpg';
+import arenaDesert from '@/assets/arenas/arena-desert.jpg';
+import arenaIce from '@/assets/arenas/arena-ice.jpg';
+import arenaVolcano from '@/assets/arenas/arena-volcano.jpg';
+
+const ARENAS = [
+  { name: 'Stone Colosseum', image: arenaStone },
+  { name: 'Mystic Forest', image: arenaForest },
+  { name: 'Desert Ruins', image: arenaDesert },
+  { name: 'Frozen Wasteland', image: arenaIce },
+  { name: 'Volcanic Rift', image: arenaVolcano },
+];
+
 interface CombatArenaProps {
   player: Character;
   opponentId?: string;
@@ -23,6 +38,7 @@ interface CombatArenaProps {
 }
 
 export function CombatArena({ player, opponentId, onCombatEnd }: CombatArenaProps) {
+  const [arena] = useState(() => ARENAS[Math.floor(Math.random() * ARENAS.length)]);
   const [enemy, setEnemy] = useState<Character>(() => createEnemyCharacter(player.level, opponentId));
   const [playerHealth, setPlayerHealth] = useState(player.stats.health);
   const [enemyHealth, setEnemyHealth] = useState(enemy.stats.health);
@@ -31,6 +47,7 @@ export function CombatArena({ player, opponentId, onCombatEnd }: CombatArenaProp
   const [currentTurn, setCurrentTurn] = useState<'player' | 'enemy' | null>(null);
   const [combatStarted, setCombatStarted] = useState(false);
   const [combatEnded, setCombatEnded] = useState(false);
+  const [screenShake, setScreenShake] = useState(false);
 
   const addLog = (message: string, type: CombatLog['type']) => {
     const log: CombatLog = {
@@ -62,9 +79,11 @@ export function CombatArena({ player, opponentId, onCombatEnd }: CombatArenaProp
       addLog(`${defender.name} evaded the attack!`, 'damage');
       toast.info('Attack evaded!');
     } else {
-      // Play hit sound
+      // Play hit sound and trigger screen shake
       if (result.isCrit) {
         playCriticalHit();
+        setScreenShake(true);
+        setTimeout(() => setScreenShake(false), 300);
       } else {
         playHitSound();
       }
@@ -173,8 +192,26 @@ export function CombatArena({ player, opponentId, onCombatEnd }: CombatArenaProp
   };
 
   return (
-    <div className="min-h-screen bg-gradient-arena p-4">
-      <div className="max-w-6xl mx-auto space-y-6">
+    <div 
+      className="min-h-screen p-4 relative overflow-hidden"
+      style={{
+        backgroundImage: `url(${arena.image})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundAttachment: 'fixed',
+      }}
+    >
+      {/* Dark overlay for better contrast */}
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" />
+      
+      {/* Arena name badge */}
+      <div className="relative z-10 text-center mb-4">
+        <div className="inline-block px-6 py-2 bg-card/90 backdrop-blur-sm border-2 border-primary/30 rounded-full">
+          <p className="text-sm font-bold text-primary">{arena.name}</p>
+        </div>
+      </div>
+      
+      <div className={`max-w-6xl mx-auto space-y-6 relative z-10 ${screenShake ? 'animate-screen-shake' : ''}`}>
         {/* Combat Arena */}
         <Card className="p-6 bg-card/90 backdrop-blur-sm border-2 border-primary/30 shadow-combat">
           <div className="grid grid-cols-2 gap-8 mb-8">
@@ -189,13 +226,26 @@ export function CombatArena({ player, opponentId, onCombatEnd }: CombatArenaProp
                 </p>
               </div>
               
-              <div className={`
-                w-32 h-32 mx-auto rounded-full ${getClassGradient(player.class)} 
-                flex items-center justify-center text-6xl font-bold text-white
-                ${isAttacking && currentTurn === 'player' ? 'animate-attack-slash' : ''}
-                ${isAttacking && currentTurn === 'enemy' ? 'animate-hit-flash' : ''}
-              `}>
-                {player.name[0].toUpperCase()}
+              <div className="relative">
+                <div className={`
+                  w-32 h-32 mx-auto rounded-full ${getClassGradient(player.class)} 
+                  flex items-center justify-center text-6xl font-bold text-white
+                  shadow-2xl border-4 border-white/20 transition-all duration-300
+                  ${isAttacking && currentTurn === 'player' ? 'animate-attack-slash scale-110' : ''}
+                  ${isAttacking && currentTurn === 'enemy' ? 'animate-hit-flash' : ''}
+                  ${combatStarted ? 'animate-float' : ''}
+                `}>
+                  {player.name[0].toUpperCase()}
+                </div>
+                {isAttacking && currentTurn === 'player' && (
+                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
+                    <div className="text-6xl animate-attack-effect">
+                      {player.class === 'fighter' && '⚔️'}
+                      {player.class === 'mage' && '✨'}
+                      {player.class === 'archer' && '🏹'}
+                    </div>
+                  </div>
+                )}
               </div>
               
               <div className="space-y-2">
@@ -246,13 +296,26 @@ export function CombatArena({ player, opponentId, onCombatEnd }: CombatArenaProp
                 </p>
               </div>
               
-              <div className={`
-                w-32 h-32 mx-auto rounded-full ${getClassGradient(enemy.class)} 
-                flex items-center justify-center text-6xl font-bold text-white
-                ${isAttacking && currentTurn === 'enemy' ? 'animate-attack-slash' : ''}
-                ${isAttacking && currentTurn === 'player' ? 'animate-hit-flash' : ''}
-              `}>
-                {enemy.name[0].toUpperCase()}
+              <div className="relative">
+                <div className={`
+                  w-32 h-32 mx-auto rounded-full ${getClassGradient(enemy.class)} 
+                  flex items-center justify-center text-6xl font-bold text-white
+                  shadow-2xl border-4 border-white/20 transition-all duration-300
+                  ${isAttacking && currentTurn === 'enemy' ? 'animate-attack-slash scale-110' : ''}
+                  ${isAttacking && currentTurn === 'player' ? 'animate-hit-flash' : ''}
+                  ${combatStarted ? 'animate-float' : ''}
+                `}>
+                  {enemy.name[0].toUpperCase()}
+                </div>
+                {isAttacking && currentTurn === 'enemy' && (
+                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
+                    <div className="text-6xl animate-attack-effect">
+                      {enemy.class === 'fighter' && '⚔️'}
+                      {enemy.class === 'mage' && '✨'}
+                      {enemy.class === 'archer' && '🏹'}
+                    </div>
+                  </div>
+                )}
               </div>
               
               <div className="space-y-2">
