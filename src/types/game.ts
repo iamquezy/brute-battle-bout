@@ -8,6 +8,7 @@ export interface Character {
   class: CharacterClass;
   level: number;
   experience: number;
+  gold: number;
   stats: {
     health: number;
     maxHealth: number;

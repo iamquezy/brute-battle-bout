@@ -47,6 +47,7 @@ export function createCharacter(name: string, characterClass: CharacterClass): C
     class: characterClass,
     level: 1,
     experience: 0,
+    gold: 0,
     stats: { ...CLASS_STATS[characterClass] },
   };
 }

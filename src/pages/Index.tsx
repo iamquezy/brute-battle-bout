@@ -1,19 +1,21 @@
 import { useState } from 'react';
 import { Character, StatType } from '@/types/game';
 import { Equipment, EquipmentSlots } from '@/types/equipment';
+import { ShopItem, ActiveBuff } from '@/types/shop';
 import { CharacterCreation } from '@/components/CharacterCreation';
 import { OpponentSelection } from '@/components/OpponentSelection';
 import { CombatArena } from '@/components/CombatArena';
 import { LevelUpModal } from '@/components/LevelUpModal';
 import { Inventory } from '@/components/Inventory';
 import { Skills } from '@/components/Skills';
+import { Shop } from '@/components/Shop';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { createCharacter, levelUpCharacter, checkLevelUp } from '@/lib/gameLogic';
 import { generateEquipment, shouldDropLoot, calculateEquipmentStats } from '@/lib/equipmentLogic';
 import { getRandomSkill, getSkillById } from '@/lib/skillsData';
-import { Trophy, Swords, Backpack } from 'lucide-react';
+import { Trophy, Swords, Backpack, Store, Coins } from 'lucide-react';
 import { toast } from 'sonner';
 import warriorAvatar from '@/assets/avatars/warrior.png';
 import mageAvatar from '@/assets/avatars/mage.png';
@@ -40,6 +42,8 @@ const Index = () => {
   });
   const [battleHistory, setBattleHistory] = useState<BattleRecord[]>([]);
   const [acquiredSkills, setAcquiredSkills] = useState<string[]>([]);
+  const [activeBuffs, setActiveBuffs] = useState<ActiveBuff[]>([]);
+  const [shopOpen, setShopOpen] = useState(false);
 
   const handleCreateCharacter = (name: string, characterClass: Character['class']) => {
     const newCharacter = createCharacter(name, characterClass);
@@ -60,10 +64,34 @@ const Index = () => {
 
     if (victory) {
       const updatedPlayer = { ...player };
-      updatedPlayer.experience += expGained;
+      
+      // Calculate gold reward (10-30 base + player level scaling)
+      const goldReward = Math.floor(10 + Math.random() * 20 + player.level * 5);
+      updatedPlayer.gold += goldReward;
+      
+      // Apply exp buffs
+      let finalExp = expGained;
+      activeBuffs.forEach(buff => {
+        if (buff.type === 'exp-boost') {
+          finalExp = Math.floor(finalExp * buff.multiplier);
+        }
+      });
+      
+      updatedPlayer.experience += finalExp;
       updatedPlayer.stats.health = updatedPlayer.stats.maxHealth; // Heal after victory
       
+      // Decrease buff durations
+      setActiveBuffs(prev => 
+        prev
+          .map(buff => ({ ...buff, battlesRemaining: buff.battlesRemaining - 1 }))
+          .filter(buff => buff.battlesRemaining > 0)
+      );
+      
       setPlayer(updatedPlayer);
+      
+      toast.success(`Victory! +${goldReward} gold`, {
+        description: finalExp > expGained ? `${finalExp} exp (boosted!)` : `${expGained} exp`,
+      });
       
       // Check for equipment drop
       if (shouldDropLoot()) {
@@ -249,6 +277,79 @@ const Index = () => {
     toast.info(`Unequipped ${item.name}`);
   };
 
+  const handlePurchase = (item: ShopItem) => {
+    if (!player || player.gold < item.price) {
+      toast.error('Not enough gold!');
+      return;
+    }
+
+    const updatedPlayer = { ...player };
+    updatedPlayer.gold -= item.price;
+
+    switch (item.effect.type) {
+      case 'heal':
+        updatedPlayer.stats.health = updatedPlayer.stats.maxHealth;
+        toast.success('Health restored!');
+        break;
+      
+      case 'exp-boost':
+        if (item.effect.value && item.effect.duration) {
+          setActiveBuffs(prev => [...prev, {
+            id: Math.random().toString(36),
+            name: item.name,
+            type: 'exp-boost',
+            multiplier: item.effect.value!,
+            battlesRemaining: item.effect.duration!,
+          }]);
+          toast.success('Exp boost active!', {
+            description: `+50% exp for ${item.effect.duration} battles`,
+          });
+        }
+        break;
+      
+      case 'reroll':
+        if (inventory.length > 0) {
+          const randomIndex = Math.floor(Math.random() * inventory.length);
+          const itemToReroll = inventory[randomIndex];
+          const newItem = generateEquipment(itemToReroll.type, player.class);
+          const newInventory = [...inventory];
+          newInventory[randomIndex] = newItem;
+          setInventory(newInventory);
+          toast.success(`Rerolled ${itemToReroll.name}!`, {
+            description: `Got ${newItem.name}`,
+          });
+        } else {
+          toast.error('No items to reroll!');
+          updatedPlayer.gold += item.price; // Refund
+        }
+        break;
+      
+      case 'skill-token':
+        const newSkill = getRandomSkill(acquiredSkills);
+        setAcquiredSkills(prev => [...prev, newSkill.id]);
+        
+        if (newSkill.effect) {
+          if (newSkill.effect.attack) updatedPlayer.stats.attack += newSkill.effect.attack;
+          if (newSkill.effect.defense) updatedPlayer.stats.defense += newSkill.effect.defense;
+          if (newSkill.effect.speed) updatedPlayer.stats.speed += newSkill.effect.speed;
+          if (newSkill.effect.health) {
+            updatedPlayer.stats.maxHealth += newSkill.effect.health;
+            updatedPlayer.stats.health = updatedPlayer.stats.maxHealth;
+          }
+          if (newSkill.effect.evasion) updatedPlayer.stats.evasion += newSkill.effect.evasion;
+          if (newSkill.effect.critChance) updatedPlayer.stats.critChance += newSkill.effect.critChance;
+          if (newSkill.effect.luck) updatedPlayer.stats.luck += newSkill.effect.luck;
+        }
+        
+        toast.success(`New Skill: ${newSkill.name}!`, {
+          description: newSkill.description,
+        });
+        break;
+    }
+
+    setPlayer(updatedPlayer);
+  };
+
   if (gameState === 'creation') {
     return <CharacterCreation onCreateCharacter={handleCreateCharacter} />;
   }
@@ -301,15 +402,36 @@ const Index = () => {
             <h1 className="text-5xl font-bold bg-gradient-gold bg-clip-text text-transparent mb-2 animate-float">
               Warrior's Hall
             </h1>
+            <div className="flex items-center justify-center gap-2 text-2xl font-bold">
+              <Coins className="w-6 h-6 text-primary" />
+              <span className="text-primary">{player.gold}</span>
+              <span className="text-muted-foreground text-lg">gold</span>
+            </div>
           </div>
-          <Button
-            onClick={startNewBattle}
-            className="w-full max-w-md mx-auto flex items-center justify-center h-16 text-xl font-bold bg-gradient-gold text-primary-foreground hover:opacity-90 transition-all hover:scale-105 shadow-combat"
-          >
-            <Swords className="w-6 h-6 mr-2" />
-            Enter the Arena
-          </Button>
+          <div className="flex gap-3 max-w-md mx-auto">
+            <Button
+              onClick={startNewBattle}
+              className="flex-1 h-16 text-xl font-bold bg-gradient-gold text-primary-foreground hover:opacity-90 transition-all hover:scale-105 shadow-combat"
+            >
+              <Swords className="w-6 h-6 mr-2" />
+              Enter Arena
+            </Button>
+            <Button
+              onClick={() => setShopOpen(true)}
+              className="h-16 px-6 text-xl font-bold bg-primary/20 border-2 border-primary hover:bg-primary/30 transition-all hover:scale-105"
+            >
+              <Store className="w-6 h-6" />
+            </Button>
+          </div>
         </div>
+        
+        {/* Shop Modal */}
+        <Shop 
+          open={shopOpen} 
+          onClose={() => setShopOpen(false)}
+          playerGold={player.gold}
+          onPurchase={handlePurchase}
+        />
 
         {/* Main Layout: 3 columns */}
         <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
