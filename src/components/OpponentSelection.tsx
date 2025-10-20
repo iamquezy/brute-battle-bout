@@ -3,6 +3,9 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { PRE_MADE_OPPONENTS } from '@/types/opponents';
 import { Sword, Wand2, Target, Shield, Zap, Heart, TrendingUp, TrendingDown } from 'lucide-react';
+import opponentWarrior from '@/assets/avatars/opponent-warrior.png';
+import opponentMage from '@/assets/avatars/opponent-mage.png';
+import opponentArcher from '@/assets/avatars/opponent-archer.png';
 
 interface OpponentSelectionProps {
   playerLevel: number;
@@ -14,6 +17,12 @@ const CLASS_ICONS = {
   fighter: Sword,
   mage: Wand2,
   archer: Target,
+};
+
+const CLASS_AVATARS = {
+  fighter: opponentWarrior,
+  mage: opponentMage,
+  archer: opponentArcher,
 };
 
 const CLASS_BASE_STATS = {
@@ -89,11 +98,12 @@ export function OpponentSelection({ playerLevel, onSelectOpponent, onCancel }: O
                 onClick={() => setSelectedOpponent(opponent.id)}
               >
                 <div className="flex flex-col gap-4">
-                  <div className={`
-                    w-24 h-24 mx-auto rounded-full ${getClassGradient(opponent.class)} 
-                    flex items-center justify-center animate-glow-pulse border-2 border-destructive/30
-                  `}>
-                    <Icon className="w-12 h-12 text-white" />
+                  <div className="relative w-32 h-32 mx-auto">
+                    <img 
+                      src={CLASS_AVATARS[opponent.class]} 
+                      alt={`${opponent.class} opponent`}
+                      className="w-full h-full object-cover rounded-full border-4 border-destructive shadow-glow animate-glow-pulse"
+                    />
                   </div>
                   
                   <div className="text-center">

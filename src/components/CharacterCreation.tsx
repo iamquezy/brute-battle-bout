@@ -66,7 +66,7 @@ export function CharacterCreation({ onCreateCharacter }: CharacterCreationProps)
         
         {/* Name Input */}
         <div className="mb-8 max-w-md mx-auto">
-          <Label htmlFor="name" className="text-lg mb-2 block">Warrior Name</Label>
+          <Label htmlFor="name" className="text-lg mb-2 block">Choose a Name</Label>
           <Input
             id="name"
             type="text"
