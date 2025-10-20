@@ -2,6 +2,11 @@ import { useState } from 'react';
 import { Character, StatType } from '@/types/game';
 import { Equipment, EquipmentSlots } from '@/types/equipment';
 import { ShopItem, ActiveBuff } from '@/types/shop';
+import { Quest } from '@/types/quests';
+import { Achievement, AchievementStats, Title } from '@/types/achievements';
+import { Pet } from '@/types/pets';
+import { CraftingMaterials, DISMANTLE_REWARDS, UPGRADE_COSTS } from '@/types/crafting';
+import { SkillTreeNode } from '@/types/skillTree';
 import { CharacterCreation } from '@/components/CharacterCreation';
 import { OpponentSelection } from '@/components/OpponentSelection';
 import { CombatArena } from '@/components/CombatArena';
@@ -9,13 +14,23 @@ import { LevelUpModal } from '@/components/LevelUpModal';
 import { Inventory } from '@/components/Inventory';
 import { Skills } from '@/components/Skills';
 import { Shop } from '@/components/Shop';
+import { Quests } from '@/components/Quests';
+import { Achievements } from '@/components/Achievements';
+import { Pets } from '@/components/Pets';
+import { Crafting } from '@/components/Crafting';
+import { SkillTree } from '@/components/SkillTree';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { createCharacter, levelUpCharacter, checkLevelUp } from '@/lib/gameLogic';
 import { generateEquipment, shouldDropLoot, calculateEquipmentStats } from '@/lib/equipmentLogic';
 import { getRandomSkill, getSkillById } from '@/lib/skillsData';
-import { Trophy, Swords, Backpack, Store, Coins } from 'lucide-react';
+import { createDailyQuests, createWeeklyQuests, ACHIEVEMENT_QUESTS } from '@/lib/questData';
+import { ACHIEVEMENTS, TITLES } from '@/lib/achievementData';
+import { rollPetDrop, PET_LIBRARY } from '@/lib/petData';
+import { getSkillTreeForClass } from '@/lib/skillTreeData';
+import { Trophy, Swords, Backpack, Store, Coins, Target, Award, Sparkles, Hammer, Zap } from 'lucide-react';
 import { toast } from 'sonner';
 import warriorAvatar from '@/assets/avatars/warrior.png';
 import mageAvatar from '@/assets/avatars/mage.png';
@@ -44,10 +59,50 @@ const Index = () => {
   const [acquiredSkills, setAcquiredSkills] = useState<string[]>([]);
   const [activeBuffs, setActiveBuffs] = useState<ActiveBuff[]>([]);
   const [shopOpen, setShopOpen] = useState(false);
+  
+  // Phase 2: Quest System
+  const [dailyQuests, setDailyQuests] = useState<Quest[]>([]);
+  const [weeklyQuests, setWeeklyQuests] = useState<Quest[]>([]);
+  const [achievementQuests, setAchievementQuests] = useState<Quest[]>([]);
+  const [questsOpen, setQuestsOpen] = useState(false);
+  
+  // Phase 2: Achievement System
+  const [achievements, setAchievements] = useState<Achievement[]>([]);
+  const [achievementStats, setAchievementStats] = useState<AchievementStats>({
+    totalWins: 0, totalLosses: 0, totalDamageDealt: 0, criticalHits: 0,
+    attacksEvaded: 0, itemsFound: 0, legendaryItemsOwned: 0, skillsAcquired: 0,
+    goldEarned: 0, lowHealthWins: 0
+  });
+  const [currentTitle, setCurrentTitle] = useState<string | null>(null);
+  const [achievementsOpen, setAchievementsOpen] = useState(false);
+  
+  // Phase 2: Pet System
+  const [collectedPets, setCollectedPets] = useState<Pet[]>([]);
+  const [activePet, setActivePet] = useState<Pet | null>(null);
+  const [petsOpen, setPetsOpen] = useState(false);
+  
+  // Phase 2: Crafting System
+  const [craftingMaterials, setCraftingMaterials] = useState<CraftingMaterials>({
+    common_shard: 0, uncommon_shard: 0, rare_shard: 0, epic_shard: 0, legendary_shard: 0
+  });
+  const [craftingOpen, setCraftingOpen] = useState(false);
+  
+  // Phase 2: Skill Tree
+  const [skillTreeNodes, setSkillTreeNodes] = useState<SkillTreeNode[]>([]);
+  const [skillPoints, setSkillPoints] = useState(0);
+  const [skillTreeOpen, setSkillTreeOpen] = useState(false);
 
   const handleCreateCharacter = (name: string, characterClass: Character['class']) => {
     const newCharacter = createCharacter(name, characterClass);
     setPlayer(newCharacter);
+    
+    // Initialize Phase 2 systems
+    setDailyQuests(createDailyQuests());
+    setWeeklyQuests(createWeeklyQuests());
+    setAchievementQuests([...ACHIEVEMENT_QUESTS]);
+    setAchievements([...ACHIEVEMENTS]);
+    setSkillTreeNodes(getSkillTreeForClass(characterClass).nodes);
+    
     setGameState('hub');
   };
 
