@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Character, StatType } from '@/types/game';
 import { Equipment, EquipmentSlots } from '@/types/equipment';
 import { ShopItem, ActiveBuff } from '@/types/shop';
@@ -23,6 +23,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { createCharacter, levelUpCharacter, checkLevelUp } from '@/lib/gameLogic';
 import { generateEquipment, shouldDropLoot, calculateEquipmentStats } from '@/lib/equipmentLogic';
 import { getRandomSkill, getSkillById } from '@/lib/skillsData';
@@ -30,7 +31,8 @@ import { createDailyQuests, createWeeklyQuests, ACHIEVEMENT_QUESTS } from '@/lib
 import { ACHIEVEMENTS, TITLES } from '@/lib/achievementData';
 import { rollPetDrop, PET_LIBRARY } from '@/lib/petData';
 import { getSkillTreeForClass } from '@/lib/skillTreeData';
-import { Trophy, Swords, Backpack, Store, Coins, Target, Award, Sparkles, Hammer, Zap } from 'lucide-react';
+import { saveGame, loadGame, clearGame } from '@/lib/saveGame';
+import { Trophy, Swords, Backpack, Store, Coins, Target, Award, Sparkles, Hammer, Zap, RotateCcw } from 'lucide-react';
 import { toast } from 'sonner';
 import warriorAvatar from '@/assets/avatars/warrior.png';
 import mageAvatar from '@/assets/avatars/mage.png';
@@ -91,6 +93,123 @@ const Index = () => {
   const [skillTreeNodes, setSkillTreeNodes] = useState<SkillTreeNode[]>([]);
   const [skillPoints, setSkillPoints] = useState(0);
   const [skillTreeOpen, setSkillTreeOpen] = useState(false);
+
+  // Phase 2.5: Save System
+  const [lastDailyReset, setLastDailyReset] = useState(Date.now());
+  const [lastWeeklyReset, setLastWeeklyReset] = useState(Date.now());
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  // Load game on mount
+  useEffect(() => {
+    const savedGame = loadGame();
+    if (savedGame) {
+      setPlayer(savedGame.player);
+      setInventory(savedGame.inventory);
+      setEquippedItems(savedGame.equippedItems);
+      setBattleHistory(savedGame.battleHistory);
+      setAcquiredSkills(savedGame.acquiredSkills);
+      setActiveBuffs(savedGame.activeBuffs);
+      setDailyQuests(savedGame.dailyQuests);
+      setWeeklyQuests(savedGame.weeklyQuests);
+      setAchievements(savedGame.achievements);
+      setCurrentTitle(savedGame.equippedTitle);
+      setCollectedPets(savedGame.collectedPets);
+      setActivePet(savedGame.activePet);
+      setCraftingMaterials(savedGame.craftingMaterials);
+      setSkillTreeNodes(savedGame.skillTreeNodes);
+      setSkillPoints(savedGame.skillPoints);
+      setLastDailyReset(savedGame.lastDailyReset);
+      setLastWeeklyReset(savedGame.lastWeeklyReset);
+
+      // Check if quests need reset
+      const now = Date.now();
+      const oneDayMs = 24 * 60 * 60 * 1000;
+      const oneWeekMs = 7 * oneDayMs;
+
+      if (now - savedGame.lastDailyReset >= oneDayMs) {
+        setDailyQuests(createDailyQuests());
+        setLastDailyReset(now);
+        toast.info('Daily quests have been reset!');
+      }
+
+      if (now - savedGame.lastWeeklyReset >= oneWeekMs) {
+        setWeeklyQuests(createWeeklyQuests());
+        setLastWeeklyReset(now);
+        toast.info('Weekly quests have been reset!');
+      }
+
+      setGameState('hub');
+      toast.success('Progress loaded!');
+    }
+    setIsLoaded(true);
+  }, []);
+
+  // Auto-save with debounce
+  useEffect(() => {
+    if (!isLoaded || !player) return;
+
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+
+    saveTimeoutRef.current = setTimeout(() => {
+      const success = saveGame({
+        player,
+        inventory,
+        equippedItems,
+        battleHistory,
+        acquiredSkills,
+        activeBuffs,
+        shopItems: [],
+        dailyQuests,
+        weeklyQuests,
+        achievements,
+        equippedTitle: currentTitle,
+        collectedPets,
+        activePet,
+        craftingMaterials,
+        skillTreeNodes,
+        skillPoints,
+        lastDailyReset,
+        lastWeeklyReset,
+      });
+
+      if (!success) {
+        toast.error('Failed to save progress');
+      }
+    }, 2000);
+
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
+  }, [
+    isLoaded,
+    player,
+    inventory,
+    equippedItems,
+    battleHistory,
+    acquiredSkills,
+    activeBuffs,
+    dailyQuests,
+    weeklyQuests,
+    achievements,
+    currentTitle,
+    collectedPets,
+    activePet,
+    craftingMaterials,
+    skillTreeNodes,
+    skillPoints,
+    lastDailyReset,
+    lastWeeklyReset,
+  ]);
+
+  const handleResetProgress = () => {
+    clearGame();
+    window.location.reload();
+  };
 
   const handleCreateCharacter = (name: string, characterClass: Character['class']) => {
     const newCharacter = createCharacter(name, characterClass);
@@ -919,6 +1038,36 @@ const Index = () => {
                 <p className="text-xs text-muted-foreground mb-1">Luck</p>
                 <p className="text-lg font-bold">{player.stats.luck}</p>
               </div>
+            </div>
+
+            {/* Reset Progress Button */}
+            <div className="mt-6">
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button 
+                    variant="destructive" 
+                    size="sm" 
+                    className="w-full"
+                  >
+                    <RotateCcw className="w-4 h-4 mr-2" />
+                    Reset Progress
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Reset All Progress?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This will permanently delete your character, inventory, and all progress. This action cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleResetProgress}>
+                      Reset Everything
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </div>
           </Card>
 
