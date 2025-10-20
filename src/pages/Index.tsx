@@ -106,57 +106,97 @@ const Index = () => {
     setGameState('hub');
   };
 
-  const handleCombatEnd = (victory: boolean, expGained: number, opponentName?: string) => {
+  const handleCombatEnd = (victory: boolean, expGained: number, opponentName?: string, damageDealt?: number) => {
     if (!player) return;
 
-    // Add to battle history
     const result: 'victory' | 'defeat' = victory ? 'victory' : 'defeat';
     setBattleHistory(prev => [{
       opponent: opponentName || 'Unknown',
       result,
       timestamp: Date.now(),
-    }, ...prev].slice(0, 10)); // Keep last 10 battles
+    }, ...prev].slice(0, 10));
+
+    // Update achievement stats
+    setAchievementStats(prev => ({
+      ...prev,
+      totalWins: victory ? prev.totalWins + 1 : prev.totalWins,
+      totalLosses: !victory ? prev.totalLosses + 1 : prev.totalLosses,
+      totalDamageDealt: prev.totalDamageDealt + (damageDealt || 0),
+    }));
 
     if (victory) {
       const updatedPlayer = { ...player };
       
-      // Calculate gold reward (10-30 base + player level scaling)
       const goldReward = Math.floor(10 + Math.random() * 20 + player.level * 5);
       updatedPlayer.gold += goldReward;
       
-      // Apply exp buffs
+      // Apply exp buffs & pet bonuses
       let finalExp = expGained;
       activeBuffs.forEach(buff => {
-        if (buff.type === 'exp-boost') {
-          finalExp = Math.floor(finalExp * buff.multiplier);
-        }
+        if (buff.type === 'exp-boost') finalExp = Math.floor(finalExp * buff.multiplier);
       });
+      if (activePet?.bonuses.expMultiplier) {
+        finalExp = Math.floor(finalExp * activePet.bonuses.expMultiplier);
+      }
       
       updatedPlayer.experience += finalExp;
-      updatedPlayer.stats.health = updatedPlayer.stats.maxHealth; // Heal after victory
+      updatedPlayer.stats.health = updatedPlayer.stats.maxHealth;
       
-      // Decrease buff durations
       setActiveBuffs(prev => 
-        prev
-          .map(buff => ({ ...buff, battlesRemaining: buff.battlesRemaining - 1 }))
+        prev.map(buff => ({ ...buff, battlesRemaining: buff.battlesRemaining - 1 }))
           .filter(buff => buff.battlesRemaining > 0)
       );
       
+      // Update pet experience
+      if (activePet) {
+        setActivePet(prev => {
+          if (!prev) return null;
+          const newExp = prev.experience + finalExp;
+          if (newExp >= 200) {
+            toast.success(`${prev.name} leveled up!`);
+            return { ...prev, level: prev.level + 1, experience: newExp - 200 };
+          }
+          return { ...prev, experience: newExp };
+        });
+      }
+      
       setPlayer(updatedPlayer);
+      
+      // Update quests
+      setDailyQuests(prev => prev.map(q => 
+        q.objective === 'win_battles' ? { ...q, progress: q.progress + 1, completed: q.progress + 1 >= q.target } : q
+      ));
+      setWeeklyQuests(prev => prev.map(q => 
+        q.objective === 'win_battles' ? { ...q, progress: q.progress + 1, completed: q.progress + 1 >= q.target } : q
+      ));
+      setAchievementQuests(prev => prev.map(q => 
+        q.objective === 'win_battles' ? { ...q, progress: q.progress + 1, completed: q.progress + 1 >= q.target } : q
+      ));
+      
+      // Check achievements
+      checkAchievements();
       
       toast.success(`Victory! +${goldReward} gold`, {
         description: finalExp > expGained ? `${finalExp} exp (boosted!)` : `${expGained} exp`,
       });
       
-      // Check for equipment drop
+      // Equipment drop
       if (shouldDropLoot()) {
         const loot = generateEquipment(
           ['weapon', 'armor', 'accessory'][Math.floor(Math.random() * 3)] as any,
           player.class
         );
         setInventory(prev => [...prev, loot]);
-        toast.success(`Found ${loot.name}!`, {
-          description: 'Check your inventory to equip it.',
+        setAchievementStats(prev => ({ ...prev, itemsFound: prev.itemsFound + 1 }));
+        toast.success(`Found ${loot.name}!`);
+      }
+      
+      // Pet drop
+      const petDrop = rollPetDrop();
+      if (petDrop) {
+        setCollectedPets(prev => [...prev, petDrop]);
+        toast.success(`${petDrop.emoji} ${petDrop.name} joined you!`, {
+          description: `A ${petDrop.rarity} companion!`
         });
       }
       
@@ -167,7 +207,6 @@ const Index = () => {
         setGameState('hub');
       }
     } else {
-      // On defeat, heal and return to hub
       const updatedPlayer = { ...player };
       updatedPlayer.stats.health = updatedPlayer.stats.maxHealth;
       setPlayer(updatedPlayer);
@@ -179,32 +218,23 @@ const Index = () => {
     if (!player) return;
     
     const leveledUpPlayer = levelUpCharacter(player, stat);
-    setPlayer(leveledUpPlayer);
     
-    // 30% chance to gain a skill on level up
-    if (Math.random() < 0.3) {
-      const newSkill = getRandomSkill(acquiredSkills);
-      setAcquiredSkills(prev => [...prev, newSkill.id]);
-      
-      // Apply skill effects to player
-      if (newSkill.effect) {
-        if (newSkill.effect.attack) leveledUpPlayer.stats.attack += newSkill.effect.attack;
-        if (newSkill.effect.defense) leveledUpPlayer.stats.defense += newSkill.effect.defense;
-        if (newSkill.effect.speed) leveledUpPlayer.stats.speed += newSkill.effect.speed;
-        if (newSkill.effect.health) {
-          leveledUpPlayer.stats.maxHealth += newSkill.effect.health;
-          leveledUpPlayer.stats.health = leveledUpPlayer.stats.maxHealth;
-        }
-        if (newSkill.effect.evasion) leveledUpPlayer.stats.evasion += newSkill.effect.evasion;
-        if (newSkill.effect.critChance) leveledUpPlayer.stats.critChance += newSkill.effect.critChance;
-        if (newSkill.effect.luck) leveledUpPlayer.stats.luck += newSkill.effect.luck;
-      }
-      
-      setPlayer(leveledUpPlayer);
-      toast.success(`New Skill: ${newSkill.name}!`, {
-        description: newSkill.description,
-      });
-    }
+    // Award skill point instead of random skill
+    setSkillPoints(prev => prev + 1);
+    toast.success('Level Up!', {
+      description: `+1 Skill Point (${skillPoints + 1} total)`
+    });
+    
+    // Update quests
+    setWeeklyQuests(prev => prev.map(q => 
+      q.objective === 'reach_level' ? { ...q, progress: leveledUpPlayer.level, completed: leveledUpPlayer.level >= q.target } : q
+    ));
+    setAchievementQuests(prev => prev.map(q => 
+      q.objective === 'reach_level' ? { ...q, progress: leveledUpPlayer.level, completed: leveledUpPlayer.level >= q.target } : q
+    ));
+    
+    setPlayer(leveledUpPlayer);
+    checkAchievements();
     
     setPendingLevelUp(false);
     setGameState('hub');
@@ -221,6 +251,215 @@ const Index = () => {
 
   const handleCancelOpponentSelection = () => {
     setGameState('hub');
+  };
+  
+  // Phase 2: Helper Functions
+  const checkAchievements = () => {
+    setAchievements(prev => prev.map(ach => {
+      let newProgress = ach.progress;
+      
+      if (ach.id === 'ach_novice_fighter' || ach.id === 'ach_veteran_warrior' || ach.id === 'ach_champion') {
+        newProgress = achievementStats.totalWins;
+      } else if (ach.id === 'ach_critical_master') {
+        newProgress = achievementStats.criticalHits;
+      } else if (ach.id === 'ach_untouchable') {
+        newProgress = achievementStats.attacksEvaded;
+      } else if (ach.id === 'ach_rising_star' || ach.id === 'ach_hero' || ach.id === 'ach_legend') {
+        newProgress = player?.level || 0;
+      } else if (ach.id === 'ach_treasure_hunter') {
+        newProgress = achievementStats.itemsFound;
+      } else if (ach.id === 'ach_legendary_collector') {
+        newProgress = achievementStats.legendaryItemsOwned;
+      } else if (ach.id === 'ach_glass_cannon') {
+        newProgress = achievementStats.lowHealthWins;
+      } else if (ach.id === 'ach_wealthy') {
+        newProgress = achievementStats.goldEarned;
+      }
+      
+      const wasCompleted = ach.completed;
+      const isCompleted = newProgress >= ach.requirement;
+      
+      if (isCompleted && !wasCompleted) {
+        toast.success(`Achievement Unlocked: ${ach.name}!`);
+        if (ach.unlocksTitle) {
+          toast.success(`New title unlocked: ${TITLES[ach.unlocksTitle].name}!`);
+        }
+      }
+      
+      return { ...ach, progress: newProgress, completed: isCompleted };
+    }));
+  };
+  
+  // Phase 2: Quest Handlers
+  const handleClaimQuestReward = (questId: string) => {
+    const claimQuest = (quests: Quest[]) => {
+      return quests.map(q => {
+        if (q.id === questId && q.completed && !q.claimed) {
+          if (!player) return q;
+          
+          const updatedPlayer = { ...player };
+          if (q.reward.gold) updatedPlayer.gold += q.reward.gold;
+          if (q.reward.exp) updatedPlayer.experience += q.reward.exp;
+          if (q.reward.item) {
+            const loot = generateEquipment(
+              ['weapon', 'armor', 'accessory'][Math.floor(Math.random() * 3)] as any,
+              player.class
+            );
+            setInventory(prev => [...prev, loot]);
+          }
+          if (q.reward.skillToken) {
+            setSkillPoints(prev => prev + 1);
+          }
+          
+          setPlayer(updatedPlayer);
+          toast.success(`Quest Complete: ${q.name}!`);
+          return { ...q, claimed: true };
+        }
+        return q;
+      });
+    };
+    
+    setDailyQuests(claimQuest);
+    setWeeklyQuests(claimQuest);
+    setAchievementQuests(claimQuest);
+  };
+  
+  // Phase 2: Achievement Handlers
+  const handleEquipTitle = (titleId: string) => {
+    setCurrentTitle(titleId);
+    toast.success(`Title equipped: ${TITLES[titleId].name}`);
+  };
+  
+  const handleUnequipTitle = () => {
+    setCurrentTitle(null);
+    toast.info('Title unequipped');
+  };
+  
+  // Phase 2: Pet Handlers
+  const handleEquipPet = (petId: string) => {
+    const pet = collectedPets.find(p => p.id === petId);
+    if (pet) {
+      setActivePet(pet);
+      toast.success(`${pet.emoji} ${pet.name} is now active!`);
+    }
+  };
+  
+  const handleUnequipPet = () => {
+    if (activePet) {
+      toast.info(`${activePet.name} returned`);
+      setActivePet(null);
+    }
+  };
+  
+  // Phase 2: Crafting Handlers
+  const handleDismantle = (itemId: string) => {
+    const item = inventory.find(i => i.id === itemId);
+    if (!item) return;
+    
+    const shardType = `${item.rarity}_shard` as keyof CraftingMaterials;
+    const shardAmount = DISMANTLE_REWARDS[item.rarity];
+    
+    setCraftingMaterials(prev => ({
+      ...prev,
+      [shardType]: prev[shardType] + shardAmount
+    }));
+    
+    setInventory(prev => prev.filter(i => i.id !== itemId));
+    toast.success(`Dismantled ${item.name} for ${shardAmount} ${item.rarity} shards`);
+  };
+  
+  const handleUpgrade = (itemId: string) => {
+    const item = inventory.find(i => i.id === itemId);
+    if (!item || !player || item.rarity === 'legendary') return;
+    
+    const cost = UPGRADE_COSTS[item.rarity];
+    if (!cost) return;
+    
+    const shardType = `${item.rarity}_shard` as keyof CraftingMaterials;
+    if (craftingMaterials[shardType] < cost.shards || player.gold < cost.gold) {
+      toast.error('Not enough resources!');
+      return;
+    }
+    
+    const rarityOrder: Array<'common' | 'uncommon' | 'rare' | 'epic' | 'legendary'> = 
+      ['common', 'uncommon', 'rare', 'epic', 'legendary'];
+    const newRarity = rarityOrder[rarityOrder.indexOf(item.rarity) + 1];
+    
+    const upgradedItem = generateEquipment(item.type, player.class);
+    upgradedItem.rarity = newRarity;
+    
+    setCraftingMaterials(prev => ({
+      ...prev,
+      [shardType]: prev[shardType] - cost.shards
+    }));
+    
+    setPlayer(prev => prev ? { ...prev, gold: prev.gold - cost.gold } : null);
+    setInventory(prev => prev.map(i => i.id === itemId ? upgradedItem : i));
+    toast.success(`Upgraded to ${newRarity}!`);
+  };
+  
+  const handleReforge = (itemId: string) => {
+    const item = inventory.find(i => i.id === itemId);
+    if (!item || !player) return;
+    
+    const shardType = `${item.rarity}_shard` as keyof CraftingMaterials;
+    const cost = 5;
+    
+    if (craftingMaterials[shardType] < cost || player.gold < 50) {
+      toast.error('Not enough resources!');
+      return;
+    }
+    
+    const reforgedItem = generateEquipment(item.type, player.class);
+    reforgedItem.rarity = item.rarity;
+    
+    setCraftingMaterials(prev => ({ ...prev, [shardType]: prev[shardType] - cost }));
+    setPlayer(prev => prev ? { ...prev, gold: prev.gold - 50 } : null);
+    setInventory(prev => prev.map(i => i.id === itemId ? reforgedItem : i));
+    toast.success('Item reforged!');
+  };
+  
+  const handleEnchant = (itemId: string) => {
+    toast.info('Enchanting coming soon!');
+  };
+  
+  // Phase 2: Skill Tree Handlers
+  const handleUnlockSkillNode = (nodeId: string) => {
+    const node = skillTreeNodes.find(n => n.id === nodeId);
+    if (!node || !player) return;
+    
+    if (skillPoints < node.cost) {
+      toast.error('Not enough skill points!');
+      return;
+    }
+    
+    if (node.prerequisite) {
+      const prereq = skillTreeNodes.find(n => n.id === node.prerequisite);
+      if (!prereq?.unlocked) {
+        toast.error('Unlock prerequisite first!');
+        return;
+      }
+    }
+    
+    setSkillPoints(prev => prev - node.cost);
+    setSkillTreeNodes(prev => prev.map(n => 
+      n.id === nodeId ? { ...n, unlocked: true } : n
+    ));
+    
+    const updatedPlayer = { ...player };
+    if (node.effect.attack) updatedPlayer.stats.attack += node.effect.attack;
+    if (node.effect.defense) updatedPlayer.stats.defense += node.effect.defense;
+    if (node.effect.speed) updatedPlayer.stats.speed += node.effect.speed;
+    if (node.effect.health) {
+      updatedPlayer.stats.maxHealth += node.effect.health;
+      updatedPlayer.stats.health = updatedPlayer.stats.maxHealth;
+    }
+    if (node.effect.evasion) updatedPlayer.stats.evasion += node.effect.evasion;
+    if (node.effect.critChance) updatedPlayer.stats.critChance += node.effect.critChance;
+    if (node.effect.luck) updatedPlayer.stats.luck += node.effect.luck;
+    
+    setPlayer(updatedPlayer);
+    toast.success(`Unlocked: ${node.name}!`);
   };
 
   const calculateSkillBonuses = () => {
@@ -478,6 +717,30 @@ const Index = () => {
               <Store className="w-6 h-6" />
             </Button>
           </div>
+          
+          {/* Quick Access Buttons */}
+          <div className="flex gap-2 max-w-2xl mx-auto mt-4 flex-wrap justify-center">
+            <Button variant="outline" size="sm" onClick={() => setQuestsOpen(true)}>
+              <Target className="w-4 h-4 mr-1" />
+              Quests
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setAchievementsOpen(true)}>
+              <Award className="w-4 h-4 mr-1" />
+              Achievements
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setPetsOpen(true)}>
+              <Sparkles className="w-4 h-4 mr-1" />
+              Pets ({collectedPets.length})
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setCraftingOpen(true)}>
+              <Hammer className="w-4 h-4 mr-1" />
+              Crafting
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setSkillTreeOpen(true)}>
+              <Zap className="w-4 h-4 mr-1" />
+              Skills ({skillPoints} SP)
+            </Button>
+          </div>
         </div>
         
         {/* Shop Modal */}
@@ -486,6 +749,54 @@ const Index = () => {
           onClose={() => setShopOpen(false)}
           playerGold={player.gold}
           onPurchase={handlePurchase}
+        />
+        
+        {/* Phase 2 Modals */}
+        <Quests
+          open={questsOpen}
+          onClose={() => setQuestsOpen(false)}
+          dailyQuests={dailyQuests}
+          weeklyQuests={weeklyQuests}
+          achievementQuests={achievementQuests}
+          onClaimReward={handleClaimQuestReward}
+        />
+        
+        <Achievements
+          open={achievementsOpen}
+          onClose={() => setAchievementsOpen(false)}
+          achievements={achievements}
+          titles={TITLES}
+          currentTitle={currentTitle}
+          onEquipTitle={handleEquipTitle}
+          onUnequipTitle={handleUnequipTitle}
+        />
+        
+        <Pets
+          open={petsOpen}
+          onClose={() => setPetsOpen(false)}
+          pets={collectedPets}
+          activePet={activePet}
+          onEquipPet={handleEquipPet}
+          onUnequipPet={handleUnequipPet}
+        />
+        
+        <Crafting
+          open={craftingOpen}
+          onClose={() => setCraftingOpen(false)}
+          inventory={inventory}
+          materials={craftingMaterials}
+          onDismantle={handleDismantle}
+          onUpgrade={handleUpgrade}
+          onReforge={handleReforge}
+          onEnchant={handleEnchant}
+        />
+        
+        <SkillTree
+          open={skillTreeOpen}
+          onClose={() => setSkillTreeOpen(false)}
+          nodes={skillTreeNodes}
+          skillPoints={skillPoints}
+          onUnlockNode={handleUnlockSkillNode}
         />
 
         {/* Main Layout: 3 columns */}
@@ -542,7 +853,20 @@ const Index = () => {
                   className="w-full h-full object-cover rounded-full border-4 border-primary shadow-glow animate-glow-pulse"
                 />
               </div>
-              <h2 className="text-3xl font-bold mb-2">{player.name}</h2>
+              <h2 className="text-3xl font-bold mb-2">
+                {currentTitle && TITLES[currentTitle] && (
+                  <span 
+                    className="block text-sm mb-1"
+                    style={{ color: TITLES[currentTitle].color }}
+                  >
+                    {TITLES[currentTitle].name}
+                  </span>
+                )}
+                {player.name}
+                {activePet && (
+                  <span className="text-4xl ml-2">{activePet.emoji}</span>
+                )}
+              </h2>
               <div className="inline-block px-4 py-2 rounded-full bg-gradient-gold text-primary-foreground font-bold text-lg">
                 Level {player.level}
               </div>
