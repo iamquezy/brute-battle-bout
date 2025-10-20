@@ -9,6 +9,7 @@ import { CLASS_DESCRIPTIONS } from '@/lib/gameLogic';
 import warriorAvatar from '@/assets/avatars/warrior.png';
 import mageAvatar from '@/assets/avatars/mage.png';
 import archerAvatar from '@/assets/avatars/archer.png';
+import arenaLogo from '@/assets/arena-legends-logo.png';
 
 interface CharacterCreationProps {
   onCreateCharacter: (name: string, characterClass: CharacterClass) => void;
@@ -59,7 +60,14 @@ export function CharacterCreation({ onCreateCharacter }: CharacterCreationProps)
   return (
     <div className="min-h-screen bg-gradient-arena flex items-center justify-center p-4">
       <Card className="max-w-4xl w-full p-8 bg-card/95 backdrop-blur-sm border-2 border-primary/30 shadow-combat">
-        <h1 className="text-4xl font-bold text-center mb-2 bg-gradient-gold bg-clip-text text-transparent animate-float">
+        <div className="mb-6 flex justify-center">
+          <img 
+            src={arenaLogo} 
+            alt="Arena of Legends" 
+            className="w-full max-w-2xl h-auto animate-float"
+          />
+        </div>
+        <h1 className="text-4xl font-bold text-center mb-2 bg-gradient-gold bg-clip-text text-transparent">
           Create Your Warrior
         </h1>
         <p className="text-center text-muted-foreground mb-8">Choose your name and fighting style</p>
