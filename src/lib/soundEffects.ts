@@ -1,4 +1,27 @@
-// Simple sound effects using Web Audio API
+// Combat sound effects using MP3 files
+import warriorSound from '@/assets/sounds/warrior.mp3';
+import mageSound from '@/assets/sounds/mage.mp3';
+import archerSound from '@/assets/sounds/archer.mp3';
+
+function playAudio(src: string, volume: number = 0.5) {
+  const audio = new Audio(src);
+  audio.volume = volume;
+  audio.play().catch(err => console.error('Error playing audio:', err));
+}
+
+export function playSwordSlash() {
+  playAudio(warriorSound, 0.6);
+}
+
+export function playBowShot() {
+  playAudio(archerSound, 0.6);
+}
+
+export function playSpellCast() {
+  playAudio(mageSound, 0.6);
+}
+
+// Simple sound effects using Web Audio API for hit sounds
 let audioContext: AudioContext | null = null;
 
 function getAudioContext(): AudioContext {
@@ -24,68 +47,6 @@ function playTone(frequency: number, duration: number, type: OscillatorType = 's
 
   oscillator.start(ctx.currentTime);
   oscillator.stop(ctx.currentTime + duration);
-}
-
-export function playSwordSlash() {
-  // Enhanced metallic sword slash
-  const ctx = getAudioContext();
-  
-  // Initial strike with metallic resonance
-  playTone(900, 0.08, 'square', 0.25);
-  setTimeout(() => playTone(600, 0.12, 'sawtooth', 0.2), 40);
-  setTimeout(() => playTone(350, 0.15, 'triangle', 0.15), 80);
-  setTimeout(() => playTone(200, 0.18, 'sine', 0.08), 130);
-  
-  // Add metallic ring
-  setTimeout(() => {
-    playTone(1400, 0.15, 'sine', 0.12);
-    playTone(2800, 0.12, 'sine', 0.08);
-  }, 60);
-}
-
-export function playBowShot() {
-  // Enhanced bow and arrow sound
-  const ctx = getAudioContext();
-  
-  // Bow string tension and snap
-  playTone(120, 0.04, 'triangle', 0.28);
-  setTimeout(() => playTone(180, 0.05, 'square', 0.25), 30);
-  
-  // Arrow whoosh with doppler effect
-  setTimeout(() => {
-    playTone(700, 0.25, 'sine', 0.18);
-    setTimeout(() => playTone(500, 0.2, 'sine', 0.14), 80);
-    setTimeout(() => playTone(350, 0.15, 'sine', 0.10), 150);
-  }, 60);
-  
-  // Air cutting sound
-  setTimeout(() => {
-    playTone(2000, 0.15, 'sine', 0.08);
-  }, 70);
-}
-
-export function playSpellCast() {
-  // Enhanced magical spell sound
-  const ctx = getAudioContext();
-  
-  // Building magical energy
-  playTone(300, 0.15, 'sine', 0.22);
-  setTimeout(() => playTone(500, 0.15, 'triangle', 0.25), 80);
-  setTimeout(() => playTone(700, 0.18, 'sine', 0.23), 160);
-  setTimeout(() => playTone(900, 0.2, 'triangle', 0.26), 240);
-  
-  // Spell release with sparkles
-  setTimeout(() => {
-    playTone(1400, 0.25, 'sine', 0.20);
-    playTone(1800, 0.22, 'sine', 0.15);
-    playTone(2200, 0.18, 'triangle', 0.12);
-  }, 320);
-  
-  // Magical shimmer
-  setTimeout(() => {
-    playTone(2800, 0.15, 'sine', 0.10);
-    playTone(3200, 0.12, 'sine', 0.08);
-  }, 400);
 }
 
 export function playHitSound() {
