@@ -14,6 +14,147 @@ export type Database = {
   }
   public: {
     Tables: {
+      boss_fights: {
+        Row: {
+          boss_id: string
+          combat_log: Json
+          created_at: string
+          damage_dealt: number
+          id: string
+          rewards: Json
+          time_taken: number
+          user_id: string
+          victory: boolean
+        }
+        Insert: {
+          boss_id: string
+          combat_log?: Json
+          created_at?: string
+          damage_dealt?: number
+          id?: string
+          rewards?: Json
+          time_taken: number
+          user_id: string
+          victory: boolean
+        }
+        Update: {
+          boss_id?: string
+          combat_log?: Json
+          created_at?: string
+          damage_dealt?: number
+          id?: string
+          rewards?: Json
+          time_taken?: number
+          user_id?: string
+          victory?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "boss_fights_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "boss_fights_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_player_preview"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      boss_leaderboard: {
+        Row: {
+          best_time: number
+          boss_id: string
+          highest_damage: number
+          id: string
+          updated_at: string
+          user_id: string
+          username: string
+          victories: number
+        }
+        Insert: {
+          best_time: number
+          boss_id: string
+          highest_damage?: number
+          id?: string
+          updated_at?: string
+          user_id: string
+          username: string
+          victories?: number
+        }
+        Update: {
+          best_time?: number
+          boss_id?: string
+          highest_damage?: number
+          id?: string
+          updated_at?: string
+          user_id?: string
+          username?: string
+          victories?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "boss_leaderboard_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "boss_leaderboard_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_player_preview"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cosmetic_items: {
+        Row: {
+          equipped: boolean
+          id: string
+          item_id: string
+          item_type: string
+          unlocked_at: string
+          user_id: string
+        }
+        Insert: {
+          equipped?: boolean
+          id?: string
+          item_id: string
+          item_type: string
+          unlocked_at?: string
+          user_id: string
+        }
+        Update: {
+          equipped?: boolean
+          id?: string
+          item_id?: string
+          item_type?: string
+          unlocked_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cosmetic_items_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cosmetic_items_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_player_preview"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       friend_requests: {
         Row: {
           created_at: string
@@ -70,6 +211,200 @@ export type Database = {
           },
         ]
       }
+      guild_members: {
+        Row: {
+          contribution: number
+          guild_id: string
+          id: string
+          joined_at: string
+          rank: string
+          user_id: string
+        }
+        Insert: {
+          contribution?: number
+          guild_id: string
+          id?: string
+          joined_at?: string
+          rank?: string
+          user_id: string
+        }
+        Update: {
+          contribution?: number
+          guild_id?: string
+          id?: string
+          joined_at?: string
+          rank?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guild_members_guild_id_fkey"
+            columns: ["guild_id"]
+            isOneToOne: false
+            referencedRelation: "guilds"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "guild_members_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "guild_members_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "public_player_preview"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      guild_messages: {
+        Row: {
+          created_at: string
+          guild_id: string
+          id: string
+          message: string
+          user_id: string
+          username: string
+        }
+        Insert: {
+          created_at?: string
+          guild_id: string
+          id?: string
+          message: string
+          user_id: string
+          username: string
+        }
+        Update: {
+          created_at?: string
+          guild_id?: string
+          id?: string
+          message?: string
+          user_id?: string
+          username?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guild_messages_guild_id_fkey"
+            columns: ["guild_id"]
+            isOneToOne: false
+            referencedRelation: "guilds"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "guild_messages_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "guild_messages_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_player_preview"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      guilds: {
+        Row: {
+          banner_color: string
+          created_at: string
+          description: string | null
+          experience: number
+          id: string
+          leader_id: string
+          level: number
+          member_limit: number
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          banner_color?: string
+          created_at?: string
+          description?: string | null
+          experience?: number
+          id?: string
+          leader_id: string
+          level?: number
+          member_limit?: number
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          banner_color?: string
+          created_at?: string
+          description?: string | null
+          experience?: number
+          id?: string
+          leader_id?: string
+          level?: number
+          member_limit?: number
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guilds_leader_id_fkey"
+            columns: ["leader_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "guilds_leader_id_fkey"
+            columns: ["leader_id"]
+            isOneToOne: false
+            referencedRelation: "public_player_preview"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hall_of_fame: {
+        Row: {
+          achievement_data: Json
+          category: string
+          id: string
+          recorded_at: string
+          user_id: string
+          username: string
+        }
+        Insert: {
+          achievement_data?: Json
+          category: string
+          id?: string
+          recorded_at?: string
+          user_id: string
+          username: string
+        }
+        Update: {
+          achievement_data?: Json
+          category?: string
+          id?: string
+          recorded_at?: string
+          user_id?: string
+          username?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hall_of_fame_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hall_of_fame_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_player_preview"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       leaderboard: {
         Row: {
           id: string
@@ -117,6 +452,51 @@ export type Database = {
           },
           {
             foreignKeyName: "leaderboard_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "public_player_preview"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prestige_records: {
+        Row: {
+          bonuses: Json
+          id: string
+          last_prestige_at: string | null
+          prestige_level: number
+          total_prestiges: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          bonuses?: Json
+          id?: string
+          last_prestige_at?: string | null
+          prestige_level?: number
+          total_prestiges?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          bonuses?: Json
+          id?: string
+          last_prestige_at?: string | null
+          prestige_level?: number
+          total_prestiges?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prestige_records_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prestige_records_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: true
             referencedRelation: "public_player_preview"
