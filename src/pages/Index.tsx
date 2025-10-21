@@ -13,6 +13,8 @@ import { SkillTreeNode } from '@/types/skillTree';
 import { CharacterCreation } from '@/components/CharacterCreation';
 import { OpponentSelection } from '@/components/OpponentSelection';
 import { CombatArena } from '@/components/CombatArena';
+import { PvPHub } from '@/components/PvPHub';
+import { PvPCombat } from '@/components/PvPCombat';
 import { LevelUpModal } from '@/components/LevelUpModal';
 import { Inventory } from '@/components/Inventory';
 import { Skills } from '@/components/Skills';
@@ -41,7 +43,7 @@ import warriorAvatar from '@/assets/avatars/warrior.png';
 import mageAvatar from '@/assets/avatars/mage.png';
 import archerAvatar from '@/assets/avatars/archer.png';
 
-type GameState = 'creation' | 'hub' | 'opponent-selection' | 'combat' | 'levelup';
+type GameState = 'creation' | 'hub' | 'opponent-selection' | 'combat' | 'levelup' | 'pvp-hub' | 'pvp-combat';
 
 interface BattleRecord {
   opponent: string;
@@ -105,6 +107,12 @@ const Index = () => {
   const [lastWeeklyReset, setLastWeeklyReset] = useState(Date.now());
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
+
+  // Phase 3: PvP System
+  const [playerRating, setPlayerRating] = useState(1000);
+  const [pvpOpponentId, setPvpOpponentId] = useState<string>('');
+  const [pvpOpponentName, setPvpOpponentName] = useState<string>('');
+  const [pvpWinStreak, setPvpWinStreak] = useState(0);
 
   // Auth check and redirect
   useEffect(() => {
@@ -487,6 +495,48 @@ const Index = () => {
 
   const handleCancelOpponentSelection = () => {
     setGameState('hub');
+  };
+
+  // Phase 3: PvP Handlers
+  const openPvPHub = () => {
+    setGameState('pvp-hub');
+  };
+
+  const handlePvPChallenge = (opponentId: string, opponentName: string) => {
+    setPvpOpponentId(opponentId);
+    setPvpOpponentName(opponentName);
+    setGameState('pvp-combat');
+  };
+
+  const handlePvPCombatEnd = async (result: any, rewards: any, newRating: number) => {
+    if (!player || !user) return;
+
+    const updatedPlayer = { ...player };
+    updatedPlayer.gold += rewards.gold || 0;
+    updatedPlayer.experience += rewards.experience || 0;
+
+    if (rewards.materials) {
+      setCraftingMaterials(prev => ({
+        ...prev,
+        [rewards.materials.type]: prev[rewards.materials.type as keyof CraftingMaterials] + rewards.materials.amount
+      }));
+    }
+
+    setPlayer(updatedPlayer);
+    setPlayerRating(newRating);
+    
+    const won = result.winner === 'attacker';
+    setPvpWinStreak(won ? pvpWinStreak + 1 : 0);
+
+    await updateLeaderboard(user.id, user.user_metadata?.username || 'Warrior', {
+      level: updatedPlayer.level,
+      wins: won ? achievementStats.totalWins + 1 : achievementStats.totalWins,
+      losses: won ? achievementStats.totalLosses : achievementStats.totalLosses + 1,
+      gold: updatedPlayer.gold,
+      rating: newRating
+    });
+
+    setGameState('pvp-hub');
   };
   
   // Phase 2: Helper Functions
@@ -898,6 +948,32 @@ const Index = () => {
     return <CombatArena player={player} opponentId={selectedOpponentId} onCombatEnd={handleCombatEnd} />;
   }
 
+  if (gameState === 'pvp-hub' && player && user) {
+    return (
+      <PvPHub 
+        player={player}
+        userId={user.id}
+        playerRating={playerRating}
+        onChallengeOpponent={handlePvPChallenge}
+        onBack={() => setGameState('hub')}
+      />
+    );
+  }
+
+  if (gameState === 'pvp-combat' && player && user) {
+    return (
+      <PvPCombat
+        player={player}
+        userId={user.id}
+        playerRating={playerRating}
+        opponentId={pvpOpponentId}
+        opponentName={pvpOpponentName}
+        onCombatEnd={handlePvPCombatEnd}
+        onBack={() => setGameState('pvp-hub')}
+      />
+    );
+  }
+
   if (gameState === 'levelup' && player) {
     return (
       <LevelUpModal
@@ -973,8 +1049,12 @@ const Index = () => {
               Crafting
             </Button>
             <Button variant="outline" size="sm" onClick={() => setSkillTreeOpen(true)}>
-              <Zap className="w-4 h-4 mr-1" />
+              <Zap className="w-4 w-4 mr-1" />
               Skills ({skillPoints} SP)
+            </Button>
+            <Button variant="outline" size="sm" onClick={openPvPHub}>
+              <Trophy className="w-4 h-4 mr-1" />
+              PvP Arena
             </Button>
           </div>
         </div>
