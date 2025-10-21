@@ -48,10 +48,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "friend_requests_receiver_id_fkey"
+            columns: ["receiver_id"]
+            isOneToOne: false
+            referencedRelation: "public_player_preview"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "friend_requests_sender_id_fkey"
             columns: ["sender_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "friend_requests_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "public_player_preview"
             referencedColumns: ["id"]
           },
         ]
@@ -99,6 +113,13 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: true
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leaderboard_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "public_player_preview"
             referencedColumns: ["id"]
           },
         ]
@@ -170,8 +191,29 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "pvp_matches_attacker_id_fkey"
+            columns: ["attacker_id"]
+            isOneToOne: false
+            referencedRelation: "public_player_preview"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "pvp_matches_defender_id_fkey"
             columns: ["defender_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pvp_matches_defender_id_fkey"
+            columns: ["defender_id"]
+            isOneToOne: false
+            referencedRelation: "public_player_preview"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pvp_matches_winner_id_fkey"
+            columns: ["winner_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -180,7 +222,7 @@ export type Database = {
             foreignKeyName: "pvp_matches_winner_id_fkey"
             columns: ["winner_id"]
             isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "public_player_preview"
             referencedColumns: ["id"]
           },
         ]
@@ -208,7 +250,27 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      public_player_preview: {
+        Row: {
+          class: string | null
+          id: string | null
+          level: number | null
+          username: string | null
+        }
+        Insert: {
+          class?: never
+          id?: string | null
+          level?: never
+          username?: string | null
+        }
+        Update: {
+          class?: never
+          id?: string | null
+          level?: never
+          username?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       has_role: {
