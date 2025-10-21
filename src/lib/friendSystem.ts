@@ -1,4 +1,12 @@
 import { supabase } from '@/integrations/supabase/client';
+import { z } from 'zod';
+
+// Username validation schema
+const usernameSchema = z.string()
+  .trim()
+  .min(3, 'Username must be at least 3 characters')
+  .max(20, 'Username must be at most 20 characters')
+  .regex(/^[a-zA-Z0-9_-]+$/, 'Username can only contain letters, numbers, underscores, and hyphens');
 
 export interface FriendRequest {
   id: string;
@@ -18,6 +26,12 @@ export interface FriendRequest {
 
 export async function sendFriendRequest(senderId: string, receiverUsername: string): Promise<{ success: boolean; error?: string }> {
   try {
+    // Validate username format
+    const validation = usernameSchema.safeParse(receiverUsername);
+    if (!validation.success) {
+      return { success: false, error: validation.error.errors[0].message };
+    }
+
     // First, find the receiver by username
     const { data: profiles, error: profileError } = await supabase
       .from('profiles')
