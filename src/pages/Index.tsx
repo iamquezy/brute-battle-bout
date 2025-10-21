@@ -16,6 +16,12 @@ import { CombatArena } from '@/components/CombatArena';
 import { PvPHub } from '@/components/PvPHub';
 import { PvPCombat } from '@/components/PvPCombat';
 import { LevelUpModal } from '@/components/LevelUpModal';
+import { BossSelection } from '@/components/BossSelection';
+import { BossBattle } from '@/components/BossBattle';
+import { GuildHub } from '@/components/GuildHub';
+import { Cosmetics } from '@/components/Cosmetics';
+import { HallOfFame } from '@/components/HallOfFame';
+import { PrestigeModal } from '@/components/PrestigeModal';
 import { Inventory } from '@/components/Inventory';
 import { Skills } from '@/components/Skills';
 import { Shop } from '@/components/Shop';
@@ -37,13 +43,13 @@ import { ACHIEVEMENTS, TITLES } from '@/lib/achievementData';
 import { rollPetDrop, PET_LIBRARY } from '@/lib/petData';
 import { getSkillTreeForClass } from '@/lib/skillTreeData';
 import { saveGame, loadGame, clearGame } from '@/lib/saveGame';
-import { Trophy, Swords, Backpack, Store, Coins, Target, Award, Sparkles, Hammer, Zap, RotateCcw, LogOut } from 'lucide-react';
+import { Trophy, Swords, Backpack, Store, Coins, Target, Award, Sparkles, Hammer, Zap, RotateCcw, LogOut, Skull, Shield, Users } from 'lucide-react';
 import { toast } from 'sonner';
 import warriorAvatar from '@/assets/avatars/warrior.png';
 import mageAvatar from '@/assets/avatars/mage.png';
 import archerAvatar from '@/assets/avatars/archer.png';
 
-type GameState = 'creation' | 'hub' | 'opponent-selection' | 'combat' | 'levelup' | 'pvp-hub' | 'pvp-combat';
+type GameState = 'creation' | 'hub' | 'opponent-selection' | 'combat' | 'levelup' | 'pvp-hub' | 'pvp-combat' | 'boss-selection' | 'boss-battle' | 'guild-hub' | 'cosmetics' | 'hall-of-fame';
 
 interface BattleRecord {
   opponent: string;
@@ -113,6 +119,10 @@ const Index = () => {
   const [pvpOpponentId, setPvpOpponentId] = useState<string>('');
   const [pvpOpponentName, setPvpOpponentName] = useState<string>('');
   const [pvpWinStreak, setPvpWinStreak] = useState(0);
+
+  // Phase 4: Content Expansion
+  const [selectedBossId, setSelectedBossId] = useState<string>('');
+  const [prestigeModalOpen, setPrestigeModalOpen] = useState(false);
 
   // Auth check and redirect
   useEffect(() => {
@@ -506,6 +516,40 @@ const Index = () => {
     setPvpOpponentId(opponentId);
     setPvpOpponentName(opponentName);
     setGameState('pvp-combat');
+  };
+
+  // Phase 4: Content Expansion Handlers
+  const openBossSelection = () => setGameState('boss-selection');
+  const openGuildHub = () => setGameState('guild-hub');
+  const openCosmetics = () => setGameState('cosmetics');
+  const openHallOfFame = () => setGameState('hall-of-fame');
+  
+  const handleSelectBoss = (bossId: string) => {
+    setSelectedBossId(bossId);
+    setGameState('boss-battle');
+  };
+
+  const handleBossBattleEnd = (rewards: any) => {
+    if (player) {
+      setPlayer({
+        ...player,
+        gold: player.gold + (rewards.gold || 0),
+        experience: player.experience + (rewards.experience || 0)
+      });
+      toast.success('Rewards collected!');
+    }
+    setGameState('boss-selection');
+  };
+
+  const handlePrestigeComplete = () => {
+    if (player && user) {
+      loadProfile(user.id).then(profile => {
+        if (profile?.character_data?.character) {
+          setPlayer(profile.character_data.character);
+          toast.success('Character reset with prestige bonuses!');
+        }
+      });
+    }
   };
 
   const handlePvPCombatEnd = async (result: any, rewards: any, newRating: number) => {
@@ -974,6 +1018,26 @@ const Index = () => {
     );
   }
 
+  if (gameState === 'boss-selection' && player) {
+    return <BossSelection player={player} onSelectBoss={handleSelectBoss} onBack={() => setGameState('hub')} />;
+  }
+
+  if (gameState === 'boss-battle' && player && user) {
+    return <BossBattle player={player} userId={user.id} bossId={selectedBossId} onBattleEnd={handleBossBattleEnd} onBack={() => setGameState('boss-selection')} />;
+  }
+
+  if (gameState === 'guild-hub' && player && user) {
+    return <GuildHub player={player} userId={user.id} username={user.user_metadata?.username || 'Player'} onBack={() => setGameState('hub')} />;
+  }
+
+  if (gameState === 'cosmetics' && player && user) {
+    return <Cosmetics player={player} userId={user.id} onBack={() => setGameState('hub')} onPurchase={(cost) => setPlayer(p => p ? {...p, gold: p.gold - cost} : p)} />;
+  }
+
+  if (gameState === 'hall-of-fame') {
+    return <HallOfFame onBack={() => setGameState('hub')} />;
+  }
+
   if (gameState === 'levelup' && player) {
     return (
       <LevelUpModal
@@ -1056,6 +1120,26 @@ const Index = () => {
               <Trophy className="w-4 h-4 mr-1" />
               PvP Arena
             </Button>
+            <Button variant="outline" size="sm" onClick={openBossSelection}>
+              <Skull className="w-4 h-4 mr-1" />
+              Raid Bosses
+            </Button>
+            <Button variant="outline" size="sm" onClick={openGuildHub}>
+              <Users className="w-4 h-4 mr-1" />
+              Guild
+            </Button>
+            <Button variant="outline" size="sm" onClick={openCosmetics}>
+              <Sparkles className="w-4 h-4 mr-1" />
+              Cosmetics
+            </Button>
+            <Button variant="outline" size="sm" onClick={openHallOfFame}>
+              <Trophy className="w-4 h-4 mr-1" />
+              Hall of Fame
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setPrestigeModalOpen(true)}>
+              <Sparkles className="w-4 h-4 mr-1 text-yellow-500" />
+              Prestige
+            </Button>
           </div>
         </div>
         
@@ -1113,6 +1197,14 @@ const Index = () => {
           nodes={skillTreeNodes}
           skillPoints={skillPoints}
           onUnlockNode={handleUnlockSkillNode}
+        />
+
+        <PrestigeModal
+          open={prestigeModalOpen}
+          onClose={() => setPrestigeModalOpen(false)}
+          player={player}
+          userId={user.id}
+          onPrestige={handlePrestigeComplete}
         />
 
         {/* Main Layout: 3 columns */}
