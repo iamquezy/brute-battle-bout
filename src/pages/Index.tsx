@@ -188,42 +188,93 @@ const Index = () => {
       } else {
         // Load from cloud profile
         const data = profile.character_data;
-        setPlayer(data.character);
-        setInventory(data.inventory);
-        setEquippedItems(data.equippedItems);
-        setBattleHistory(data.battleHistory);
-        setAcquiredSkills(data.acquiredSkills);
-        setActiveBuffs(data.activeBuffs);
-        setDailyQuests(data.dailyQuests);
-        setWeeklyQuests(data.weeklyQuests);
-        setAchievements(data.achievements);
-        setCurrentTitle(data.equippedTitle);
-        setCollectedPets(data.collectedPets);
-        setActivePet(data.activePet);
-        setCraftingMaterials(data.craftingMaterials);
-        setSkillTreeNodes(data.skillTreeNodes);
-        setSkillPoints(data.skillPoints);
-        setAchievementStats(data.achievementStats);
-        setLastDailyReset(data.lastDailyReset);
-        setLastWeeklyReset(data.lastWeeklyReset);
-
-        // Check for quest resets
-        const now = Date.now();
-        const dayInMs = 24 * 60 * 60 * 1000;
-        const weekInMs = 7 * dayInMs;
-
-        if (now - data.lastDailyReset > dayInMs) {
-          setDailyQuests(createDailyQuests());
-          setLastDailyReset(now);
-        }
-
-        if (now - data.lastWeeklyReset > weekInMs) {
-          setWeeklyQuests(createWeeklyQuests());
-          setLastWeeklyReset(now);
-        }
 
         if (data.character) {
+          // Only apply cloud data if a character exists
+          setPlayer(data.character);
+          setInventory(data.inventory);
+          setEquippedItems(data.equippedItems);
+          setBattleHistory(data.battleHistory);
+          setAcquiredSkills(data.acquiredSkills);
+          setActiveBuffs(data.activeBuffs);
+          setDailyQuests(data.dailyQuests);
+          setWeeklyQuests(data.weeklyQuests);
+          setAchievements(data.achievements);
+          setCurrentTitle(data.equippedTitle);
+          setCollectedPets(data.collectedPets);
+          setActivePet(data.activePet);
+          setCraftingMaterials(data.craftingMaterials);
+          setSkillTreeNodes(data.skillTreeNodes);
+          setSkillPoints(data.skillPoints);
+          setAchievementStats(data.achievementStats);
+          setLastDailyReset(data.lastDailyReset);
+          setLastWeeklyReset(data.lastWeeklyReset);
+
+          // Check for quest resets
+          const now = Date.now();
+          const dayInMs = 24 * 60 * 60 * 1000;
+          const weekInMs = 7 * dayInMs;
+
+          if (now - data.lastDailyReset > dayInMs) {
+            setDailyQuests(createDailyQuests());
+            setLastDailyReset(now);
+          }
+
+          if (now - data.lastWeeklyReset > weekInMs) {
+            setWeeklyQuests(createWeeklyQuests());
+            setLastWeeklyReset(now);
+          }
+
           setGameState('hub');
+        } else {
+          // No cloud character yet — try to recover from local save without overwriting
+          const savedGame = loadGame();
+          if (savedGame?.player) {
+            setPlayer(savedGame.player);
+            setInventory(savedGame.inventory);
+            setEquippedItems(savedGame.equippedItems);
+            setBattleHistory(savedGame.battleHistory);
+            setAcquiredSkills(savedGame.acquiredSkills);
+            setActiveBuffs(savedGame.activeBuffs);
+            setDailyQuests(savedGame.dailyQuests);
+            setWeeklyQuests(savedGame.weeklyQuests);
+            setAchievements(savedGame.achievements);
+            setCurrentTitle(savedGame.equippedTitle);
+            setCollectedPets(savedGame.collectedPets);
+            setActivePet(savedGame.activePet);
+            setCraftingMaterials(savedGame.craftingMaterials);
+            setSkillTreeNodes(savedGame.skillTreeNodes);
+            setSkillPoints(savedGame.skillPoints);
+            setAchievementStats(savedGame.achievementStats);
+            setLastDailyReset(savedGame.lastDailyReset);
+            setLastWeeklyReset(savedGame.lastWeeklyReset);
+            setGameState('hub');
+
+            // Persist recovered local state to cloud (best-effort)
+            saveProfile(user.id, {
+              character: savedGame.player,
+              inventory: savedGame.inventory,
+              equippedItems: savedGame.equippedItems,
+              battleHistory: savedGame.battleHistory,
+              acquiredSkills: savedGame.acquiredSkills,
+              activeBuffs: savedGame.activeBuffs,
+              dailyQuests: savedGame.dailyQuests,
+              weeklyQuests: savedGame.weeklyQuests,
+              achievements: savedGame.achievements,
+              equippedTitle: savedGame.equippedTitle,
+              collectedPets: savedGame.collectedPets,
+              activePet: savedGame.activePet,
+              craftingMaterials: savedGame.craftingMaterials,
+              skillTreeNodes: savedGame.skillTreeNodes,
+              skillPoints: savedGame.skillPoints,
+              achievementStats: savedGame.achievementStats,
+              lastDailyReset: savedGame.lastDailyReset,
+              lastWeeklyReset: savedGame.lastWeeklyReset,
+            });
+          } else {
+            // Nothing to load — remain in creation flow
+            setGameState('creation');
+          }
         }
       }
 
@@ -1525,7 +1576,11 @@ const Index = () => {
     );
   }
 
-  return null;
+  return (
+    <div className="min-h-screen bg-gradient-arena flex items-center justify-center">
+      <div className="text-muted-foreground text-lg">Preparing arena...</div>
+    </div>
+  );
 };
 
 export default Index;
