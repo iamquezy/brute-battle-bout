@@ -237,7 +237,7 @@ const Index = () => {
   // Load game on mount (fallback for localStorage)
   useEffect(() => {
     const savedGame = loadGame();
-    if (savedGame) {
+    if (savedGame && savedGame.player) {
       setPlayer(savedGame.player);
       setInventory(savedGame.inventory);
       setEquippedItems(savedGame.equippedItems);
@@ -974,6 +974,15 @@ const Index = () => {
     setPlayer(updatedPlayer);
   };
 
+  // Loading state while auth restores
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-arena flex items-center justify-center">
+        <div className="text-muted-foreground text-lg">Loading...</div>
+      </div>
+    );
+  }
+
   if (gameState === 'creation') {
     return <CharacterCreation onCreateCharacter={handleCreateCharacter} />;
   }
@@ -1116,27 +1125,63 @@ const Index = () => {
               <Zap className="w-4 w-4 mr-1" />
               Skills ({skillPoints} SP)
             </Button>
-            <Button variant="outline" size="sm" onClick={openPvPHub}>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={openPvPHub}
+              disabled={!user}
+              title={!user ? 'Loading...' : undefined}
+            >
               <Trophy className="w-4 h-4 mr-1" />
               PvP Arena
             </Button>
-            <Button variant="outline" size="sm" onClick={openBossSelection}>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={openBossSelection}
+              disabled={!user}
+              title={!user ? 'Loading...' : undefined}
+            >
               <Skull className="w-4 h-4 mr-1" />
               Raid Bosses
             </Button>
-            <Button variant="outline" size="sm" onClick={openGuildHub}>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={openGuildHub}
+              disabled={!user}
+              title={!user ? 'Loading...' : undefined}
+            >
               <Users className="w-4 h-4 mr-1" />
               Guild
             </Button>
-            <Button variant="outline" size="sm" onClick={openCosmetics}>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={openCosmetics}
+              disabled={!user}
+              title={!user ? 'Loading...' : undefined}
+            >
               <Sparkles className="w-4 h-4 mr-1" />
               Cosmetics
             </Button>
-            <Button variant="outline" size="sm" onClick={openHallOfFame}>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={openHallOfFame}
+              disabled={!user}
+              title={!user ? 'Loading...' : undefined}
+            >
               <Trophy className="w-4 h-4 mr-1" />
               Hall of Fame
             </Button>
-            <Button variant="outline" size="sm" onClick={() => setPrestigeModalOpen(true)}>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setPrestigeModalOpen(true)}
+              disabled={!user}
+              title={!user ? 'Loading...' : undefined}
+            >
               <Sparkles className="w-4 h-4 mr-1 text-yellow-500" />
               Prestige
             </Button>
@@ -1199,13 +1244,15 @@ const Index = () => {
           onUnlockNode={handleUnlockSkillNode}
         />
 
-        <PrestigeModal
-          open={prestigeModalOpen}
-          onClose={() => setPrestigeModalOpen(false)}
-          player={player}
-          userId={user.id}
-          onPrestige={handlePrestigeComplete}
-        />
+        {user && (
+          <PrestigeModal
+            open={prestigeModalOpen}
+            onClose={() => setPrestigeModalOpen(false)}
+            player={player}
+            userId={user.id}
+            onPrestige={handlePrestigeComplete}
+          />
+        )}
 
         {/* Main Layout: 3 columns */}
         <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
