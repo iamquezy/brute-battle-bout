@@ -3,9 +3,11 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Character, CombatLog } from '@/types/game';
-import { calculateDamage, createEnemyCharacter, determineFirstAttacker } from '@/lib/gameLogic';
+import { calculateDamage, createEnemyCharacter, determineFirstAttacker, DifficultyTier } from '@/lib/gameLogic';
 import { Sword, Heart, Shield, Zap } from 'lucide-react';
 import { toast } from 'sonner';
+import { CombatEventDisplay } from '@/components/CombatEventDisplay';
+import { ComboDisplay } from '@/components/ComboDisplay';
 import { 
   playSwordSlash, 
   playBowShot, 
@@ -34,12 +36,13 @@ const ARENAS = [
 interface CombatArenaProps {
   player: Character;
   opponentId?: string;
-  onCombatEnd: (victory: boolean, expGained: number, opponentName?: string) => void;
+  difficulty?: DifficultyTier;
+  onCombatEnd: (victory: boolean, expGained: number, goldGained: number, opponentName?: string) => void;
 }
 
-export function CombatArena({ player, opponentId, onCombatEnd }: CombatArenaProps) {
+export function CombatArena({ player, opponentId, difficulty = 'normal', onCombatEnd }: CombatArenaProps) {
   const [arena] = useState(() => ARENAS[Math.floor(Math.random() * ARENAS.length)]);
-  const [enemy, setEnemy] = useState<Character>(() => createEnemyCharacter(player.level, opponentId));
+  const [enemy, setEnemy] = useState<Character>(() => createEnemyCharacter(player.level, opponentId, difficulty));
   const [playerHealth, setPlayerHealth] = useState(player.stats.health);
   const [enemyHealth, setEnemyHealth] = useState(enemy.stats.health);
   const [combatLogs, setCombatLogs] = useState<CombatLog[]>([]);
@@ -48,15 +51,19 @@ export function CombatArena({ player, opponentId, onCombatEnd }: CombatArenaProp
   const [combatStarted, setCombatStarted] = useState(false);
   const [combatEnded, setCombatEnded] = useState(false);
   const [screenShake, setScreenShake] = useState(false);
+  const [comboCount, setComboCount] = useState(0);
+  const [currentEvent, setCurrentEvent] = useState<any>(null);
+  const [totalDamageDealt, setTotalDamageDealt] = useState(0);
 
-  const addLog = (message: string, type: CombatLog['type']) => {
+  const addLog = (message: string, type: CombatLog['type'], icon?: string) => {
     const log: CombatLog = {
       id: Math.random().toString(36).substr(2, 9),
       message,
       type,
       timestamp: Date.now(),
+      icon,
     };
-    setCombatLogs((prev) => [log, ...prev].slice(0, 10));
+    setCombatLogs((prev) => [log, ...prev].slice(0, 20));
   };
 
   const executeAttack = async (attacker: Character, defender: Character, isPlayer: boolean) => {
@@ -71,13 +78,42 @@ export function CombatArena({ player, opponentId, onCombatEnd }: CombatArenaProp
       playBowShot();
     }
     
-    const result = calculateDamage(attacker, defender);
+    const result = calculateDamage(attacker, defender, isPlayer ? comboCount : 0);
     
     await new Promise((resolve) => setTimeout(resolve, 600));
     
+    // Handle random events
+    if (result.randomEvent) {
+      setCurrentEvent(result.randomEvent);
+      await new Promise((resolve) => setTimeout(resolve, 2500));
+      setCurrentEvent(null);
+      
+      // Handle arena hazard (damages both)
+      if (result.randomEvent === 'arena_hazard' && result.eventDamage) {
+        setPlayerHealth((prev) => Math.max(0, prev - result.eventDamage!));
+        setEnemyHealth((prev) => Math.max(0, prev - result.eventDamage!));
+        addLog(`⚡ Arena hazard deals ${result.eventDamage} damage to both fighters!`, 'event', '⚡');
+      }
+      
+      // Handle second wind
+      if (result.randomEvent === 'second_wind') {
+        const healAmount = Math.floor(defender.stats.maxHealth * 0.1);
+        if (isPlayer) {
+          setEnemyHealth((prev) => Math.min(defender.stats.maxHealth, prev + healAmount));
+          addLog(`💚 ${defender.name} gained a second wind! Healed ${healAmount} HP!`, 'heal', '💚');
+        } else {
+          setPlayerHealth((prev) => Math.min(defender.stats.maxHealth, prev + healAmount));
+          addLog(`💚 ${defender.name} gained a second wind! Healed ${healAmount} HP!`, 'heal', '💚');
+        }
+      }
+    }
+    
     if (result.isEvaded) {
-      addLog(`${defender.name} evaded the attack!`, 'damage');
-      toast.info('Attack evaded!');
+      addLog(`💨 ${defender.name} evaded the attack!`, 'evade', '💨');
+      if (isPlayer) {
+        setComboCount(0); // Break combo
+        toast.info('Attack evaded! Combo broken!');
+      }
     } else {
       // Play hit sound and trigger screen shake
       if (result.isCrit) {
@@ -88,18 +124,22 @@ export function CombatArena({ player, opponentId, onCombatEnd }: CombatArenaProp
         playHitSound();
       }
       
-      const attackType = attacker.class === 'fighter' ? '⚔️ slashes' : 
-                         attacker.class === 'mage' ? '✨ blasts' : 
-                         '🏹 shoots';
-      const critText = result.isCrit ? ' CRITICAL HIT!' : '';
+      const attackType = attacker.class === 'fighter' ? 'slashes' : 
+                         attacker.class === 'mage' ? 'blasts' : 
+                         'shoots';
+      const critText = result.isCrit ? ' ✨ CRITICAL HIT!' : '';
+      const comboText = result.comboMultiplier > 1 ? ` (${result.comboMultiplier.toFixed(1)}x combo)` : '';
       
       if (isPlayer) {
         setEnemyHealth((prev) => Math.max(0, prev - result.damage));
-        addLog(`${attacker.name} ${attackType} for ${result.damage} damage!${critText}`, 'attack');
+        setComboCount(prev => prev + 1);
+        setTotalDamageDealt(prev => prev + result.damage);
+        addLog(`⚔️ ${attacker.name} ${attackType} for ${result.damage} damage!${critText}${comboText}`, 'attack', '⚔️');
         if (result.isCrit) toast.success('Critical Hit!');
+        if (result.comboMultiplier >= 2) toast.success(`${comboCount + 1}x Combo!`);
       } else {
         setPlayerHealth((prev) => Math.max(0, prev - result.damage));
-        addLog(`${attacker.name} ${attackType} for ${result.damage} damage!${critText}`, 'damage');
+        addLog(`🩸 ${attacker.name} ${attackType} for ${result.damage} damage!${critText}`, 'damage', '🩸');
         if (result.isCrit) toast.error('Enemy Critical Hit!');
       }
     }
@@ -127,16 +167,17 @@ export function CombatArena({ player, opponentId, onCombatEnd }: CombatArenaProp
     const playerWins = Math.random() < winChance;
     
     if (playerWins) {
-      const expGained = enemy.level * 50 + 25;
-      addLog(`Victory! Gained ${expGained} experience!`, 'victory');
+      const baseExp = enemy.level * 50 + 25;
+      const baseGold = Math.floor(10 + Math.random() * 20 + player.level * 5);
+      addLog(`✅ Victory! Gained ${baseExp} experience!`, 'victory', '✅');
       playVictory();
-      toast.success(`Victory! +${expGained} EXP`);
-      setTimeout(() => onCombatEnd(true, expGained, enemy.name), 1000);
+      toast.success(`Victory! +${baseExp} EXP`);
+      setTimeout(() => onCombatEnd(true, baseExp, baseGold, enemy.name), 1000);
     } else {
-      addLog('You have been defeated...', 'defeat');
+      addLog('☠️ You have been defeated...', 'defeat', '☠️');
       playDefeat();
       toast.error('Defeat!');
-      setTimeout(() => onCombatEnd(false, 0, enemy.name), 1000);
+      setTimeout(() => onCombatEnd(false, 0, 0, enemy.name), 1000);
     }
   };
 
@@ -161,17 +202,18 @@ export function CombatArena({ player, opponentId, onCombatEnd }: CombatArenaProp
     
     if (playerHealth <= 0) {
       setCombatEnded(true);
-      addLog('You have been defeated...', 'defeat');
+      addLog('☠️ You have been defeated...', 'defeat', '☠️');
       playDefeat();
       toast.error('Defeat!');
-      setTimeout(() => onCombatEnd(false, 0, enemy.name), 1500);
+      setTimeout(() => onCombatEnd(false, 0, 0, enemy.name), 1500);
     } else if (enemyHealth <= 0) {
       setCombatEnded(true);
-      const expGained = enemy.level * 50 + 25;
-      addLog(`Victory! Gained ${expGained} experience!`, 'victory');
+      const baseExp = enemy.level * 50 + 25;
+      const baseGold = Math.floor(10 + Math.random() * 20 + player.level * 5);
+      addLog(`✅ Victory! Gained ${baseExp} experience!`, 'victory', '✅');
       playVictory();
-      toast.success(`Victory! +${expGained} EXP`);
-      setTimeout(() => onCombatEnd(true, expGained, enemy.name), 1500);
+      toast.success(`Victory! +${baseExp} EXP, +${baseGold} Gold`);
+      setTimeout(() => onCombatEnd(true, baseExp, baseGold, enemy.name), 1500);
     }
   }, [playerHealth, enemyHealth, combatEnded]);
 
@@ -384,7 +426,7 @@ export function CombatArena({ player, opponentId, onCombatEnd }: CombatArenaProp
         </Card>
 
         {/* Combat Log */}
-        <Card className="p-4 bg-card/90 backdrop-blur-sm border border-primary/20 max-h-48 overflow-y-auto">
+        <Card className="p-4 bg-card/90 backdrop-blur-sm border border-primary/20 max-h-96 overflow-y-auto">
           <h3 className="text-lg font-bold mb-2 text-primary">Combat Log</h3>
           <div className="space-y-1">
             {combatLogs.map((log) => (
@@ -397,6 +439,14 @@ export function CombatArena({ player, opponentId, onCombatEnd }: CombatArenaProp
                     ? 'text-red-400 font-bold'
                     : log.type === 'attack'
                     ? 'text-primary'
+                    : log.type === 'crit'
+                    ? 'text-yellow-400 font-bold'
+                    : log.type === 'evade'
+                    ? 'text-blue-400'
+                    : log.type === 'event'
+                    ? 'text-purple-400 font-bold'
+                    : log.type === 'heal'
+                    ? 'text-green-500'
                     : 'text-destructive'
                 }`}
               >
@@ -405,6 +455,14 @@ export function CombatArena({ player, opponentId, onCombatEnd }: CombatArenaProp
             ))}
           </div>
         </Card>
+        
+        {/* Combo Display */}
+        {comboCount > 0 && combatStarted && !combatEnded && (
+          <ComboDisplay combo={comboCount} />
+        )}
+        
+        {/* Combat Event Display */}
+        <CombatEventDisplay event={currentEvent} />
       </div>
     </div>
   );

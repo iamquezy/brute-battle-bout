@@ -24,8 +24,9 @@ export interface Character {
 export interface CombatLog {
   id: string;
   message: string;
-  type: 'attack' | 'damage' | 'victory' | 'defeat';
+  type: 'attack' | 'damage' | 'victory' | 'defeat' | 'event' | 'crit' | 'evade' | 'heal';
   timestamp: number;
+  icon?: string;
 }
 
 export interface LevelUpChoice {

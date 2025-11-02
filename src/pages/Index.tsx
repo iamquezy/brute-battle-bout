@@ -10,6 +10,8 @@ import { Achievement, AchievementStats, Title } from '@/types/achievements';
 import { Pet } from '@/types/pets';
 import { CraftingMaterials, DISMANTLE_REWARDS, UPGRADE_COSTS } from '@/types/crafting';
 import { SkillTreeNode } from '@/types/skillTree';
+import { DifficultyTier, DIFFICULTY_TIERS } from '@/lib/gameLogic';
+import { DifficultySelector } from '@/components/DifficultySelector';
 import { CharacterCreation } from '@/components/CharacterCreation';
 import { OpponentSelection } from '@/components/OpponentSelection';
 import { CombatArena } from '@/components/CombatArena';
@@ -50,7 +52,7 @@ import warriorAvatar from '@/assets/avatars/warrior.png';
 import mageAvatar from '@/assets/avatars/mage.png';
 import archerAvatar from '@/assets/avatars/archer.png';
 
-type GameState = 'creation' | 'hub' | 'opponent-selection' | 'combat' | 'levelup' | 'pvp-hub' | 'pvp-combat' | 'boss-selection' | 'boss-battle' | 'guild-hub' | 'cosmetics' | 'hall-of-fame' | 'training';
+type GameState = 'creation' | 'hub' | 'opponent-selection' | 'difficulty-selection' | 'combat' | 'levelup' | 'pvp-hub' | 'pvp-combat' | 'boss-selection' | 'boss-battle' | 'guild-hub' | 'cosmetics' | 'hall-of-fame' | 'training';
 
 interface BattleRecord {
   opponent: string;
@@ -66,6 +68,7 @@ const Index = () => {
   const [player, setPlayer] = useState<Character | null>(null);
   const [pendingLevelUp, setPendingLevelUp] = useState(false);
   const [selectedOpponentId, setSelectedOpponentId] = useState<string | undefined>(undefined);
+  const [selectedDifficulty, setSelectedDifficulty] = useState<DifficultyTier>('normal');
   const [inventory, setInventory] = useState<Equipment[]>([]);
   const [equippedItems, setEquippedItems] = useState<EquipmentSlots>({
     weapon: null,
@@ -369,7 +372,7 @@ const Index = () => {
     setGameState('hub');
   };
 
-  const handleCombatEnd = (victory: boolean, expGained: number, opponentName?: string, damageDealt?: number) => {
+  const handleCombatEnd = (victory: boolean, expGained: number, goldGained: number, opponentName?: string) => {
     if (!player) return;
 
     const result: 'victory' | 'defeat' = victory ? 'victory' : 'defeat';
@@ -384,17 +387,22 @@ const Index = () => {
       ...prev,
       totalWins: victory ? prev.totalWins + 1 : prev.totalWins,
       totalLosses: !victory ? prev.totalLosses + 1 : prev.totalLosses,
-      totalDamageDealt: prev.totalDamageDealt + (damageDealt || 0),
     }));
 
     if (victory) {
       const updatedPlayer = { ...player };
       
-      const goldReward = Math.floor(10 + Math.random() * 20 + player.level * 5);
+      // Apply difficulty modifiers from DIFFICULTY_TIERS
+      const goldReward = goldGained;
       updatedPlayer.gold += goldReward;
       
-      // Apply exp buffs & pet bonuses
+      // Apply exp buffs & pet bonuses & difficulty multiplier
       let finalExp = expGained;
+      
+      // Apply difficulty multiplier
+      const diffMod = DIFFICULTY_TIERS[selectedDifficulty];
+      finalExp = Math.floor(finalExp * diffMod.expBonus);
+      
       activeBuffs.forEach(buff => {
         if (buff.type === 'exp-boost') finalExp = Math.floor(finalExp * buff.multiplier);
       });
@@ -504,16 +512,25 @@ const Index = () => {
   };
 
   const startNewBattle = () => {
+    setGameState('difficulty-selection');
+  };
+  
+  const handleDifficultySelected = (difficulty: DifficultyTier) => {
+    setSelectedDifficulty(difficulty);
     setGameState('opponent-selection');
   };
+  
+  const handleCancelDifficultySelection = () => {
+    setGameState('hub');
+  };
 
-  const handleOpponentSelected = (opponentId: string) => {
+  const handleOpponentSelected = (opponentId?: string) => {
     setSelectedOpponentId(opponentId);
     setGameState('combat');
   };
 
   const handleCancelOpponentSelection = () => {
-    setGameState('hub');
+    setGameState('difficulty-selection');
   };
 
   // Phase 3: PvP Handlers
@@ -1030,6 +1047,15 @@ const Index = () => {
     return <CharacterCreation onCreateCharacter={handleCreateCharacter} />;
   }
 
+  if (gameState === 'difficulty-selection' && player) {
+    return (
+      <DifficultySelector
+        onSelect={handleDifficultySelected}
+        onCancel={handleCancelDifficultySelection}
+      />
+    );
+  }
+
   if (gameState === 'opponent-selection' && player) {
     return (
       <OpponentSelection
@@ -1041,7 +1067,7 @@ const Index = () => {
   }
 
   if (gameState === 'combat' && player) {
-    return <CombatArena player={player} opponentId={selectedOpponentId} onCombatEnd={handleCombatEnd} />;
+    return <CombatArena player={player} opponentId={selectedOpponentId} difficulty={selectedDifficulty} onCombatEnd={handleCombatEnd} />;
   }
 
   if (gameState === 'pvp-hub' && player && user) {
