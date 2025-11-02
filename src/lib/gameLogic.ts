@@ -52,11 +52,15 @@ export function createCharacter(name: string, characterClass: CharacterClass): C
   };
 }
 
-export function calculateDamage(attacker: Character, defender: Character): { damage: number; isCrit: boolean; isEvaded: boolean } {
+export function calculateDamage(
+  attacker: Character, 
+  defender: Character, 
+  comboCount: number = 0
+): { damage: number; isCrit: boolean; isEvaded: boolean; comboMultiplier: number } {
   // Check evasion
   const evasionChance = defender.stats.evasion + (defender.stats.luck * 0.5);
   if (Math.random() * 100 < evasionChance) {
-    return { damage: 0, isCrit: false, isEvaded: true };
+    return { damage: 0, isCrit: false, isEvaded: true, comboMultiplier: 1 };
   }
   
   const baseDamage = attacker.stats.attack;
@@ -73,7 +77,11 @@ export function calculateDamage(attacker: Character, defender: Character): { dam
     damage = Math.floor(damage * 2);
   }
   
-  return { damage, isCrit, isEvaded: false };
+  // Apply combo multiplier (caps at 3x with 10+ combo)
+  const comboMultiplier = Math.min(1 + (comboCount * 0.2), 3);
+  damage = Math.floor(damage * comboMultiplier);
+  
+  return { damage, isCrit, isEvaded: false, comboMultiplier };
 }
 
 export function checkLevelUp(character: Character): boolean {

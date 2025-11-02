@@ -29,6 +29,7 @@ import { Quests } from '@/components/Quests';
 import { Achievements } from '@/components/Achievements';
 import { Pets } from '@/components/Pets';
 import { Crafting } from '@/components/Crafting';
+import { TrainingGround } from '@/components/TrainingGround';
 import { SkillTree } from '@/components/SkillTree';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -49,7 +50,7 @@ import warriorAvatar from '@/assets/avatars/warrior.png';
 import mageAvatar from '@/assets/avatars/mage.png';
 import archerAvatar from '@/assets/avatars/archer.png';
 
-type GameState = 'creation' | 'hub' | 'opponent-selection' | 'combat' | 'levelup' | 'pvp-hub' | 'pvp-combat' | 'boss-selection' | 'boss-battle' | 'guild-hub' | 'cosmetics' | 'hall-of-fame';
+type GameState = 'creation' | 'hub' | 'opponent-selection' | 'combat' | 'levelup' | 'pvp-hub' | 'pvp-combat' | 'boss-selection' | 'boss-battle' | 'guild-hub' | 'cosmetics' | 'hall-of-fame' | 'training';
 
 interface BattleRecord {
   opponent: string;
@@ -285,50 +286,7 @@ const Index = () => {
     initializeProfile();
   }, [user, profileLoaded]);
 
-  // Load game on mount (fallback for localStorage)
-  useEffect(() => {
-    const savedGame = loadGame();
-    if (savedGame && savedGame.player) {
-      setPlayer(savedGame.player);
-      setInventory(savedGame.inventory);
-      setEquippedItems(savedGame.equippedItems);
-      setBattleHistory(savedGame.battleHistory);
-      setAcquiredSkills(savedGame.acquiredSkills);
-      setActiveBuffs(savedGame.activeBuffs);
-      setDailyQuests(savedGame.dailyQuests);
-      setWeeklyQuests(savedGame.weeklyQuests);
-      setAchievements(savedGame.achievements);
-      setCurrentTitle(savedGame.equippedTitle);
-      setCollectedPets(savedGame.collectedPets);
-      setActivePet(savedGame.activePet);
-      setCraftingMaterials(savedGame.craftingMaterials);
-      setSkillTreeNodes(savedGame.skillTreeNodes);
-      setSkillPoints(savedGame.skillPoints);
-      setLastDailyReset(savedGame.lastDailyReset);
-      setLastWeeklyReset(savedGame.lastWeeklyReset);
-
-      // Check if quests need reset
-      const now = Date.now();
-      const oneDayMs = 24 * 60 * 60 * 1000;
-      const oneWeekMs = 7 * oneDayMs;
-
-      if (now - savedGame.lastDailyReset >= oneDayMs) {
-        setDailyQuests(createDailyQuests());
-        setLastDailyReset(now);
-        toast.info('Daily quests have been reset!');
-      }
-
-      if (now - savedGame.lastWeeklyReset >= oneWeekMs) {
-        setWeeklyQuests(createWeeklyQuests());
-        setLastWeeklyReset(now);
-        toast.info('Weekly quests have been reset!');
-      }
-
-      setGameState('hub');
-      toast.success('Progress loaded!');
-    }
-    setIsLoaded(true);
-  }, []);
+  // Removed duplicate localStorage loading - handled by cloud profile loading
 
   // Auto-save with debounce
   useEffect(() => {
@@ -870,6 +828,34 @@ const Index = () => {
     return bonuses;
   };
 
+  // Training Ground Handlers
+  const handleTrainingStatGain = (stat: StatType, amount: number) => {
+    if (!player) return;
+    
+    const updatedPlayer = { ...player };
+    switch (stat) {
+      case 'attack':
+        updatedPlayer.stats.attack += amount;
+        break;
+      case 'defense':
+        updatedPlayer.stats.defense += amount;
+        break;
+      case 'speed':
+        updatedPlayer.stats.speed += amount;
+        break;
+      case 'health':
+        updatedPlayer.stats.maxHealth += amount * 10;
+        updatedPlayer.stats.health = updatedPlayer.stats.maxHealth;
+        break;
+    }
+    setPlayer(updatedPlayer);
+  };
+
+  const handleTrainingGoldSpent = (amount: number) => {
+    if (!player) return;
+    setPlayer(prev => prev ? { ...prev, gold: prev.gold - amount } : null);
+  };
+
   const handleEquip = (item: Equipment) => {
     if (!player) return;
     
@@ -1026,10 +1012,16 @@ const Index = () => {
   };
 
   // Loading state while auth restores
-  if (authLoading) {
+  if (authLoading || !profileLoaded) {
     return (
       <div className="min-h-screen bg-gradient-arena flex items-center justify-center">
-        <div className="text-muted-foreground text-lg">Loading...</div>
+        <Card className="p-8 bg-card/95 backdrop-blur-sm border-2 border-primary/30">
+          <div className="flex flex-col items-center gap-4">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+            <p className="text-foreground text-lg font-bold">Loading Arena Legends...</p>
+            <p className="text-muted-foreground text-sm">Preparing your adventure</p>
+          </div>
+        </Card>
       </div>
     );
   }
@@ -1108,6 +1100,17 @@ const Index = () => {
     );
   }
 
+  if (gameState === 'training' && player) {
+    return (
+      <TrainingGround
+        player={player}
+        onBack={() => setGameState('hub')}
+        onStatGain={handleTrainingStatGain}
+        onGoldSpent={handleTrainingGoldSpent}
+      />
+    );
+  }
+
   // Hub
   if (gameState === 'hub' && player) {
     const expNeeded = player.level * 100;
@@ -1177,6 +1180,14 @@ const Index = () => {
               Skills ({skillPoints} SP)
             </Button>
             <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setGameState('training')}
+            >
+              <Target className="w-4 h-4 mr-1" />
+              Training
+            </Button>
+            <Button
               variant="outline" 
               size="sm" 
               onClick={openPvPHub}
@@ -1576,9 +1587,18 @@ const Index = () => {
     );
   }
 
+  // Fallback - shouldn't reach here but just in case
   return (
     <div className="min-h-screen bg-gradient-arena flex items-center justify-center">
-      <div className="text-muted-foreground text-lg">Preparing arena...</div>
+      <Card className="p-8 bg-card/95 backdrop-blur-sm border-2 border-primary/30">
+        <div className="flex flex-col items-center gap-4">
+          <p className="text-foreground text-lg font-bold">Something went wrong</p>
+          <p className="text-muted-foreground text-sm">Please refresh the page or create a character</p>
+          <Button onClick={() => setGameState('creation')} variant="default">
+            Create Character
+          </Button>
+        </div>
+      </Card>
     </div>
   );
 };
