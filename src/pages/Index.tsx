@@ -358,9 +358,38 @@ const Index = () => {
     window.location.reload();
   };
 
-  const handleCreateCharacter = (name: string, characterClass: Character['class']) => {
+  const handleCreateCharacter = (
+    name: string, 
+    characterClass: Character['class'],
+    statAllocation: { str: number; dex: number; int: number; vit: number },
+    starterPetId: string
+  ) => {
     const newCharacter = createCharacter(name, characterClass);
+    
+    // Apply stat bonuses from allocation
+    newCharacter.stats.attack += statAllocation.str * 2;
+    newCharacter.stats.maxHealth += statAllocation.str + statAllocation.vit * 10;
+    newCharacter.stats.health = newCharacter.stats.maxHealth;
+    newCharacter.stats.speed += statAllocation.dex * 2;
+    newCharacter.stats.critChance += statAllocation.dex;
+    newCharacter.stats.attack += Math.floor(statAllocation.int * 1.5);
+    newCharacter.stats.evasion += statAllocation.int;
+    newCharacter.stats.defense += statAllocation.vit;
+
     setPlayer(newCharacter);
+    
+    // Add starter pet
+    const starterPet = PET_LIBRARY.find(p => p.id === starterPetId);
+    if (starterPet) {
+      const newPet = {
+        ...starterPet,
+        id: `${starterPet.id}_starter`,
+        level: 1,
+        experience: 0
+      };
+      setCollectedPets([newPet]);
+      setActivePet(newPet);
+    }
     
     // Initialize Phase 2 systems
     setDailyQuests(createDailyQuests());
@@ -368,6 +397,9 @@ const Index = () => {
     setAchievementQuests([...ACHIEVEMENT_QUESTS]);
     setAchievements([...ACHIEVEMENTS]);
     setSkillTreeNodes(getSkillTreeForClass(characterClass).nodes);
+    
+    // Initialize the title from default achievement
+    setCurrentTitle('rookie');
     
     setGameState('hub');
   };

@@ -345,12 +345,113 @@ export type Database = {
           },
         ]
       }
+      guild_war_matches: {
+        Row: {
+          attacker_id: string
+          combat_log: Json | null
+          created_at: string | null
+          defender_id: string
+          id: string
+          war_id: string
+          winner_id: string | null
+        }
+        Insert: {
+          attacker_id: string
+          combat_log?: Json | null
+          created_at?: string | null
+          defender_id: string
+          id?: string
+          war_id: string
+          winner_id?: string | null
+        }
+        Update: {
+          attacker_id?: string
+          combat_log?: Json | null
+          created_at?: string | null
+          defender_id?: string
+          id?: string
+          war_id?: string
+          winner_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guild_war_matches_war_id_fkey"
+            columns: ["war_id"]
+            isOneToOne: false
+            referencedRelation: "guild_wars"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      guild_wars: {
+        Row: {
+          created_at: string | null
+          end_time: string | null
+          guild_1_id: string
+          guild_1_points: number | null
+          guild_2_id: string
+          guild_2_points: number | null
+          id: string
+          start_time: string | null
+          status: string | null
+          winner_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          end_time?: string | null
+          guild_1_id: string
+          guild_1_points?: number | null
+          guild_2_id: string
+          guild_2_points?: number | null
+          id?: string
+          start_time?: string | null
+          status?: string | null
+          winner_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          end_time?: string | null
+          guild_1_id?: string
+          guild_1_points?: number | null
+          guild_2_id?: string
+          guild_2_points?: number | null
+          id?: string
+          start_time?: string | null
+          status?: string | null
+          winner_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guild_wars_guild_1_id_fkey"
+            columns: ["guild_1_id"]
+            isOneToOne: false
+            referencedRelation: "guilds"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "guild_wars_guild_2_id_fkey"
+            columns: ["guild_2_id"]
+            isOneToOne: false
+            referencedRelation: "guilds"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "guild_wars_winner_id_fkey"
+            columns: ["winner_id"]
+            isOneToOne: false
+            referencedRelation: "guilds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       guilds: {
         Row: {
+          active_buffs: Json | null
           banner_color: string
           created_at: string
           description: string | null
           experience: number
+          hall_level: number | null
           id: string
           leader_id: string
           level: number
@@ -359,10 +460,12 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          active_buffs?: Json | null
           banner_color?: string
           created_at?: string
           description?: string | null
           experience?: number
+          hall_level?: number | null
           id?: string
           leader_id: string
           level?: number
@@ -371,10 +474,12 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          active_buffs?: Json | null
           banner_color?: string
           created_at?: string
           description?: string | null
           experience?: number
+          hall_level?: number | null
           id?: string
           leader_id?: string
           level?: number
@@ -543,11 +648,14 @@ export type Database = {
       profiles: {
         Row: {
           appearance: Json | null
+          boss_defeats: number | null
           character_data: Json
           class_evolution_history: Json | null
           class_tier: number | null
           created_at: string
           id: string
+          pvp_losses: number | null
+          pvp_wins: number | null
           starter_pet_id: string | null
           stat_allocation: Json | null
           subclass: string | null
@@ -556,11 +664,14 @@ export type Database = {
         }
         Insert: {
           appearance?: Json | null
+          boss_defeats?: number | null
           character_data: Json
           class_evolution_history?: Json | null
           class_tier?: number | null
           created_at?: string
           id: string
+          pvp_losses?: number | null
+          pvp_wins?: number | null
           starter_pet_id?: string | null
           stat_allocation?: Json | null
           subclass?: string | null
@@ -569,11 +680,14 @@ export type Database = {
         }
         Update: {
           appearance?: Json | null
+          boss_defeats?: number | null
           character_data?: Json
           class_evolution_history?: Json | null
           class_tier?: number | null
           created_at?: string
           id?: string
+          pvp_losses?: number | null
+          pvp_wins?: number | null
           starter_pet_id?: string | null
           stat_allocation?: Json | null
           subclass?: string | null
@@ -684,6 +798,74 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      story_quests: {
+        Row: {
+          completed: boolean | null
+          created_at: string | null
+          current_step: number | null
+          id: string
+          progress: Json | null
+          quest_chain: string
+          rewards_claimed: Json | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          completed?: boolean | null
+          created_at?: string | null
+          current_step?: number | null
+          id?: string
+          progress?: Json | null
+          quest_chain: string
+          rewards_claimed?: Json | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          completed?: boolean | null
+          created_at?: string | null
+          current_step?: number | null
+          id?: string
+          progress?: Json | null
+          quest_chain?: string
+          rewards_claimed?: Json | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      territory_control: {
+        Row: {
+          captured_at: string | null
+          challenge_cooldown: string | null
+          defense_wins: number | null
+          guild_id: string | null
+          territory_id: string
+        }
+        Insert: {
+          captured_at?: string | null
+          challenge_cooldown?: string | null
+          defense_wins?: number | null
+          guild_id?: string | null
+          territory_id: string
+        }
+        Update: {
+          captured_at?: string | null
+          challenge_cooldown?: string | null
+          defense_wins?: number | null
+          guild_id?: string | null
+          territory_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "territory_control_guild_id_fkey"
+            columns: ["guild_id"]
+            isOneToOne: false
+            referencedRelation: "guilds"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       tournament_participants: {
         Row: {
