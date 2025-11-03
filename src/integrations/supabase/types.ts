@@ -113,6 +113,42 @@ export type Database = {
           },
         ]
       }
+      class_evolution_quests: {
+        Row: {
+          completed: boolean | null
+          completed_at: string | null
+          created_at: string | null
+          id: string
+          progress: Json | null
+          quest_type: string
+          requirements: Json
+          tier: number
+          user_id: string
+        }
+        Insert: {
+          completed?: boolean | null
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string
+          progress?: Json | null
+          quest_type: string
+          requirements: Json
+          tier: number
+          user_id: string
+        }
+        Update: {
+          completed?: boolean | null
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string
+          progress?: Json | null
+          quest_type?: string
+          requirements?: Json
+          tier?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       cosmetic_items: {
         Row: {
           equipped: boolean
@@ -506,23 +542,41 @@ export type Database = {
       }
       profiles: {
         Row: {
+          appearance: Json | null
           character_data: Json
+          class_evolution_history: Json | null
+          class_tier: number | null
           created_at: string
           id: string
+          starter_pet_id: string | null
+          stat_allocation: Json | null
+          subclass: string | null
           updated_at: string
           username: string
         }
         Insert: {
+          appearance?: Json | null
           character_data: Json
+          class_evolution_history?: Json | null
+          class_tier?: number | null
           created_at?: string
           id: string
+          starter_pet_id?: string | null
+          stat_allocation?: Json | null
+          subclass?: string | null
           updated_at?: string
           username: string
         }
         Update: {
+          appearance?: Json | null
           character_data?: Json
+          class_evolution_history?: Json | null
+          class_tier?: number | null
           created_at?: string
           id?: string
+          starter_pet_id?: string | null
+          stat_allocation?: Json | null
+          subclass?: string | null
           updated_at?: string
           username?: string
         }
@@ -607,6 +661,107 @@ export type Database = {
           },
         ]
       }
+      pvp_tickets: {
+        Row: {
+          last_refill: string | null
+          tickets: number | null
+          total_used: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          last_refill?: string | null
+          tickets?: number | null
+          total_used?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          last_refill?: string | null
+          tickets?: number | null
+          total_used?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      tournament_participants: {
+        Row: {
+          claimed_reward: boolean | null
+          id: string
+          joined_at: string | null
+          losses: number | null
+          placement: number | null
+          points: number | null
+          tournament_id: string
+          user_id: string
+          wins: number | null
+        }
+        Insert: {
+          claimed_reward?: boolean | null
+          id?: string
+          joined_at?: string | null
+          losses?: number | null
+          placement?: number | null
+          points?: number | null
+          tournament_id: string
+          user_id: string
+          wins?: number | null
+        }
+        Update: {
+          claimed_reward?: boolean | null
+          id?: string
+          joined_at?: string | null
+          losses?: number | null
+          placement?: number | null
+          points?: number | null
+          tournament_id?: string
+          user_id?: string
+          wins?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tournament_participants_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "tournaments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tournaments: {
+        Row: {
+          created_at: string | null
+          end_date: string
+          id: string
+          name: string
+          rewards: Json | null
+          start_date: string
+          status: string | null
+          tier: string
+        }
+        Insert: {
+          created_at?: string | null
+          end_date: string
+          id?: string
+          name: string
+          rewards?: Json | null
+          start_date: string
+          status?: string | null
+          tier: string
+        }
+        Update: {
+          created_at?: string | null
+          end_date?: string
+          id?: string
+          name?: string
+          rewards?: Json | null
+          start_date?: string
+          status?: string | null
+          tier?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -660,6 +815,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      refill_pvp_tickets: { Args: never; Returns: undefined }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
