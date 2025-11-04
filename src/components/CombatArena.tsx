@@ -8,6 +8,10 @@ import { Sword, Heart, Shield, Zap } from 'lucide-react';
 import { toast } from 'sonner';
 import { CombatEventDisplay } from '@/components/CombatEventDisplay';
 import { ComboDisplay } from '@/components/ComboDisplay';
+import { CombatActionButtons, CombatAction } from '@/components/combat/CombatActionButtons';
+import { TimingBar } from '@/components/combat/TimingBar';
+import { SkillSelectionModal } from '@/components/combat/SkillSelectionModal';
+import { useCombatSkills, getClassSkills } from '@/hooks/useCombatSkills';
 import { 
   playSwordSlash, 
   playBowShot, 
@@ -54,6 +58,16 @@ export function CombatArena({ player, opponentId, difficulty = 'normal', onComba
   const [comboCount, setComboCount] = useState(0);
   const [currentEvent, setCurrentEvent] = useState<any>(null);
   const [totalDamageDealt, setTotalDamageDealt] = useState(0);
+  
+  // New interactive combat states
+  const [waitingForPlayerAction, setWaitingForPlayerAction] = useState(false);
+  const [showTimingBar, setShowTimingBar] = useState(false);
+  const [showSkillSelection, setShowSkillSelection] = useState(false);
+  const [isDefending, setIsDefending] = useState(false);
+  const [skillCooldowns, setSkillCooldowns] = useState<Record<string, number>>({});
+  
+  const { useSkill, tickCooldowns } = useCombatSkills();
+  const playerSkills = getClassSkills(player.class);
 
   const addLog = (message: string, type: CombatLog['type'], icon?: string) => {
     const log: CombatLog = {
@@ -66,7 +80,7 @@ export function CombatArena({ player, opponentId, difficulty = 'normal', onComba
     setCombatLogs((prev) => [log, ...prev].slice(0, 20));
   };
 
-  const executeAttack = async (attacker: Character, defender: Character, isPlayer: boolean) => {
+  const executeAttack = async (attacker: Character, defender: Character, isPlayer: boolean, damageBonus: number = 1) => {
     setIsAttacking(true);
     
     // Play attack sound based on class
@@ -79,6 +93,19 @@ export function CombatArena({ player, opponentId, difficulty = 'normal', onComba
     }
     
     const result = calculateDamage(attacker, defender, isPlayer ? comboCount : 0);
+    let finalDamage = result.damage;
+    
+    // Apply damage bonus from timing
+    if (damageBonus > 1) {
+      finalDamage = Math.floor(finalDamage * damageBonus);
+    }
+    
+    // Apply defend reduction (if defender is defending)
+    if (!isPlayer && isDefending) {
+      finalDamage = Math.floor(finalDamage * 0.5);
+      addLog(`🛡️ ${defender.name} blocks 50% of the damage!`, 'evade', '🛡️');
+      setIsDefending(false); // Defend only lasts one turn
+    }
     
     await new Promise((resolve) => setTimeout(resolve, 600));
     
@@ -129,22 +156,101 @@ export function CombatArena({ player, opponentId, difficulty = 'normal', onComba
                          'shoots';
       const critText = result.isCrit ? ' ✨ CRITICAL HIT!' : '';
       const comboText = result.comboMultiplier > 1 ? ` (${result.comboMultiplier.toFixed(1)}x combo)` : '';
+      const bonusText = damageBonus > 1 ? ` [${damageBonus}x timing!]` : '';
       
       if (isPlayer) {
-        setEnemyHealth((prev) => Math.max(0, prev - result.damage));
+        setEnemyHealth((prev) => Math.max(0, prev - finalDamage));
         setComboCount(prev => prev + 1);
-        setTotalDamageDealt(prev => prev + result.damage);
-        addLog(`⚔️ ${attacker.name} ${attackType} for ${result.damage} damage!${critText}${comboText}`, 'attack', '⚔️');
+        setTotalDamageDealt(prev => prev + finalDamage);
+        addLog(`⚔️ ${attacker.name} ${attackType} for ${finalDamage} damage!${critText}${comboText}${bonusText}`, 'attack', '⚔️');
         if (result.isCrit) toast.success('Critical Hit!');
         if (result.comboMultiplier >= 2) toast.success(`${comboCount + 1}x Combo!`);
+        if (damageBonus > 1.2) toast.success(`Perfect Timing! ${damageBonus}x Damage!`);
       } else {
-        setPlayerHealth((prev) => Math.max(0, prev - result.damage));
-        addLog(`🩸 ${attacker.name} ${attackType} for ${result.damage} damage!${critText}`, 'damage', '🩸');
+        setPlayerHealth((prev) => Math.max(0, prev - finalDamage));
+        addLog(`🩸 ${attacker.name} ${attackType} for ${finalDamage} damage!${critText}`, 'damage', '🩸');
         if (result.isCrit) toast.error('Enemy Critical Hit!');
       }
     }
     
     setIsAttacking(false);
+  };
+
+  const handlePlayerAction = (action: CombatAction) => {
+    setWaitingForPlayerAction(false);
+
+    switch (action) {
+      case 'attack':
+        setShowTimingBar(true);
+        break;
+      case 'defend':
+        setIsDefending(true);
+        addLog(`🛡️ ${player.name} takes a defensive stance!`, 'evade', '🛡️');
+        toast.info('Defending! Next attack will deal 50% less damage');
+        setCurrentTurn('enemy');
+        break;
+      case 'skill':
+        setShowSkillSelection(true);
+        break;
+      case 'item':
+        toast.info('Items coming soon!');
+        setWaitingForPlayerAction(true); // Stay on player turn
+        break;
+    }
+  };
+
+  const handleTimingComplete = async (success: boolean, quality: 'perfect' | 'good' | 'normal') => {
+    setShowTimingBar(false);
+    
+    const damageMultiplier = quality === 'perfect' ? 1.5 : quality === 'good' ? 1.25 : 1;
+    
+    await executeAttack(player, enemy, true, damageMultiplier);
+    
+    // Tick down skill cooldowns
+    setSkillCooldowns(tickCooldowns(skillCooldowns));
+    
+    setCurrentTurn('enemy');
+  };
+
+  const handleSkillSelect = async (skill: any) => {
+    setShowSkillSelection(false);
+    
+    const { result, newCooldowns } = useSkill(skill, player, enemy, skillCooldowns);
+    
+    if (!result) {
+      setWaitingForPlayerAction(true);
+      return;
+    }
+    
+    setSkillCooldowns(newCooldowns);
+    setIsAttacking(true);
+    
+    // Play skill sound
+    playSpellCast();
+    
+    await new Promise((resolve) => setTimeout(resolve, 600));
+    
+    // Apply damage
+    setEnemyHealth((prev) => Math.max(0, prev - result.damage));
+    setTotalDamageDealt(prev => prev + result.damage);
+    addLog(`✨ ${result.message}`, 'attack', '✨');
+    addLog(`💥 Dealt ${result.damage} damage!`, 'damage', '💥');
+    
+    if (result.healing) {
+      setPlayerHealth((prev) => Math.min(player.stats.maxHealth, prev + result.healing));
+      addLog(`💚 Healed ${result.healing} HP!`, 'heal', '💚');
+    }
+    
+    playHitSound();
+    setScreenShake(true);
+    setTimeout(() => setScreenShake(false), 300);
+    
+    setIsAttacking(false);
+    
+    // Tick down other skill cooldowns
+    setSkillCooldowns(tickCooldowns(newCooldowns));
+    
+    setCurrentTurn('enemy');
   };
 
   const startCombat = () => {
@@ -181,21 +287,43 @@ export function CombatArena({ player, opponentId, difficulty = 'normal', onComba
     }
   };
 
+  // Keyboard shortcuts
+  useEffect(() => {
+    if (!waitingForPlayerAction) return;
+
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (e.key === 'a' || e.key === 'A') {
+        handlePlayerAction('attack');
+      } else if (e.key === 'd' || e.key === 'D') {
+        handlePlayerAction('defend');
+      } else if (e.key === 's' || e.key === 'S') {
+        handlePlayerAction('skill');
+      } else if (e.key === 'i' || e.key === 'I') {
+        handlePlayerAction('item');
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [waitingForPlayerAction]);
+
   useEffect(() => {
     if (!combatStarted || !currentTurn || isAttacking || combatEnded) return;
+    if (showTimingBar || showSkillSelection) return;
 
-    const timer = setTimeout(async () => {
-      if (currentTurn === 'player') {
-        await executeAttack(player, enemy, true);
-        setCurrentTurn('enemy');
-      } else {
+    if (currentTurn === 'player') {
+      // Wait for player input
+      setWaitingForPlayerAction(true);
+    } else {
+      // Enemy turn - auto execute
+      const timer = setTimeout(async () => {
         await executeAttack(enemy, player, false);
         setCurrentTurn('player');
-      }
-    }, 1000);
+      }, 1200);
 
-    return () => clearTimeout(timer);
-  }, [currentTurn, combatStarted, isAttacking]);
+      return () => clearTimeout(timer);
+    }
+  }, [currentTurn, combatStarted, isAttacking, showTimingBar, showSkillSelection]);
 
   useEffect(() => {
     if (combatEnded) return;
@@ -416,7 +544,7 @@ export function CombatArena({ player, opponentId, difficulty = 'normal', onComba
             </div>
           )}
 
-          {combatStarted && currentTurn && !combatEnded && (
+          {combatStarted && currentTurn && !combatEnded && !waitingForPlayerAction && (
             <div className="text-center py-2 bg-secondary rounded-lg">
               <p className="text-lg font-semibold">
                 {currentTurn === 'player' ? player.name : enemy.name}'s Turn
@@ -424,6 +552,41 @@ export function CombatArena({ player, opponentId, difficulty = 'normal', onComba
             </div>
           )}
         </Card>
+
+        {/* Player Action Buttons */}
+        {waitingForPlayerAction && !showTimingBar && !showSkillSelection && (
+          <CombatActionButtons
+            player={player}
+            onAction={handlePlayerAction}
+            disabled={isAttacking}
+            isDefending={isDefending}
+          />
+        )}
+
+        {/* Timing Bar */}
+        {showTimingBar && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+            <TimingBar
+              onComplete={handleTimingComplete}
+              onCancel={() => {
+                setShowTimingBar(false);
+                setWaitingForPlayerAction(true);
+              }}
+            />
+          </div>
+        )}
+
+        {/* Skill Selection */}
+        <SkillSelectionModal
+          open={showSkillSelection}
+          skills={playerSkills}
+          cooldowns={skillCooldowns}
+          onSelect={handleSkillSelect}
+          onClose={() => {
+            setShowSkillSelection(false);
+            setWaitingForPlayerAction(true);
+          }}
+        />
 
         {/* Combat Log */}
         <Card className="p-4 bg-card/90 backdrop-blur-sm border border-primary/20 max-h-96 overflow-y-auto">
