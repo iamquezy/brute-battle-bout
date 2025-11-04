@@ -17,6 +17,7 @@ import {
   FriendRequest 
 } from '@/lib/friendSystem';
 import { getMatchHistory, loadOpponentSnapshot } from '@/lib/pvpLogic';
+import { PvPTicketsDisplay } from '@/components/PvPTicketsDisplay';
 import { supabase } from '@/integrations/supabase/client';
 import { Users, Swords, History, Trophy, UserPlus, Check, X, Target, Shield, Zap, Heart } from 'lucide-react';
 import { toast } from 'sonner';
@@ -151,16 +152,26 @@ export function PvPHub({ player, userId, playerRating, onChallengeOpponent, onBa
       <Card className="max-w-6xl mx-auto">
         <CardHeader>
           <div className="flex items-center justify-between">
-            <div>
+            <div className="flex-1">
               <CardTitle className="text-3xl flex items-center gap-2">
                 <Swords className="h-8 w-8 text-primary" />
                 PvP Arena
               </CardTitle>
               <CardDescription>Challenge other players and climb the rankings</CardDescription>
             </div>
-            <div className="text-right">
-              <div className="text-sm text-muted-foreground">Your Rating</div>
-              <div className="text-2xl font-bold text-primary">{playerRating}</div>
+            <div className="flex items-center gap-4">
+              <PvPTicketsDisplay 
+                userId={userId} 
+                playerGold={player.gold}
+                onBuyTickets={(cost) => {
+                  // Gold deduction handled in parent (Index.tsx) through saveProfile
+                  toast.info(`Spent ${cost} gold on PvP tickets`);
+                }}
+              />
+              <div className="text-right">
+                <div className="text-sm text-muted-foreground">Your Rating</div>
+                <div className="text-2xl font-bold text-primary">{playerRating}</div>
+              </div>
             </div>
           </div>
         </CardHeader>

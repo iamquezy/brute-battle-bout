@@ -21,7 +21,9 @@ import {
   GuildMember,
   GuildMessage
 } from '@/lib/guildSystem';
-import { Users, Shield, ArrowLeft, Crown, Send, Search, Plus, LogOut } from 'lucide-react';
+import { GuildWars } from '@/components/GuildWars';
+import { TerritoryControl } from '@/components/TerritoryControl';
+import { Users, Shield, ArrowLeft, Crown, Send, Search, Plus, LogOut, Swords, MapPin } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -314,9 +316,17 @@ export function GuildHub({ player, userId, username, onBack }: GuildHubProps) {
             </CardHeader>
             <CardContent>
               <Tabs defaultValue="chat">
-                <TabsList className="grid w-full grid-cols-2">
+                <TabsList className="grid w-full grid-cols-4">
                   <TabsTrigger value="chat">Guild Chat</TabsTrigger>
                   <TabsTrigger value="members">Members ({guildMembers.length})</TabsTrigger>
+                  <TabsTrigger value="wars">
+                    <Swords className="h-4 w-4 mr-2" />
+                    Guild Wars
+                  </TabsTrigger>
+                  <TabsTrigger value="territory">
+                    <MapPin className="h-4 w-4 mr-2" />
+                    Territory
+                  </TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="chat" className="space-y-4">
@@ -394,6 +404,27 @@ export function GuildHub({ player, userId, username, onBack }: GuildHubProps) {
                       })}
                     </div>
                   </ScrollArea>
+                </TabsContent>
+                
+                <TabsContent value="wars">
+                  <GuildWars 
+                    userId={userId} 
+                    userGuildId={userGuild.guild.id}
+                    isGuildLeader={userGuild.member.rank === 'leader'}
+                    onBack={() => {}}
+                    onStartBattle={(opponentId) => {
+                      toast.info('Starting guild war battle!');
+                    }}
+                  />
+                </TabsContent>
+                
+                <TabsContent value="territory">
+                  <TerritoryControl 
+                    userId={userId} 
+                    userGuildId={userGuild.guild.id}
+                    isGuildLeader={userGuild.member.rank === 'leader'}
+                    onBack={() => {}}
+                  />
                 </TabsContent>
               </Tabs>
             </CardContent>

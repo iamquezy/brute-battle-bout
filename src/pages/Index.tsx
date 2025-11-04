@@ -24,6 +24,9 @@ import { GuildHub } from '@/components/GuildHub';
 import { Cosmetics } from '@/components/Cosmetics';
 import { HallOfFame } from '@/components/HallOfFame';
 import { PrestigeModal } from '@/components/PrestigeModal';
+import { ClassEvolutionModal } from '@/components/ClassEvolutionModal';
+import { DeathPenaltyModal } from '@/components/DeathPenaltyModal';
+import { TournamentHub } from '@/components/TournamentHub';
 import { Inventory } from '@/components/Inventory';
 import { Skills } from '@/components/Skills';
 import { Shop } from '@/components/Shop';
@@ -52,7 +55,7 @@ import warriorAvatar from '@/assets/avatars/warrior.png';
 import mageAvatar from '@/assets/avatars/mage.png';
 import archerAvatar from '@/assets/avatars/archer.png';
 
-type GameState = 'creation' | 'hub' | 'opponent-selection' | 'difficulty-selection' | 'combat' | 'levelup' | 'pvp-hub' | 'pvp-combat' | 'boss-selection' | 'boss-battle' | 'guild-hub' | 'cosmetics' | 'hall-of-fame' | 'training';
+type GameState = 'creation' | 'hub' | 'opponent-selection' | 'difficulty-selection' | 'combat' | 'levelup' | 'pvp-hub' | 'pvp-combat' | 'boss-selection' | 'boss-battle' | 'guild-hub' | 'cosmetics' | 'hall-of-fame' | 'training' | 'tournament-hub';
 
 interface BattleRecord {
   opponent: string;
@@ -127,6 +130,11 @@ const Index = () => {
   // Phase 4: Content Expansion
   const [selectedBossId, setSelectedBossId] = useState<string>('');
   const [prestigeModalOpen, setPrestigeModalOpen] = useState(false);
+  
+  // Sprint Features
+  const [classEvolutionModalOpen, setClassEvolutionModalOpen] = useState(false);
+  const [deathPenaltyModalOpen, setDeathPenaltyModalOpen] = useState(false);
+  const [deathPenaltyData, setDeathPenaltyData] = useState<{goldLost: number; itemLost: any}>({goldLost: 0, itemLost: null});
 
   // Auth check and redirect
   useEffect(() => {
@@ -1165,6 +1173,17 @@ const Index = () => {
         onBack={() => setGameState('hub')}
         onStatGain={handleTrainingStatGain}
         onGoldSpent={handleTrainingGoldSpent}
+      />
+    );
+  }
+
+  if (gameState === 'tournament-hub' && player && user) {
+    return (
+      <TournamentHub 
+        userId={user.id}
+        playerRating={playerRating}
+        playerLevel={player.level}
+        onBack={() => setGameState('hub')}
       />
     );
   }
