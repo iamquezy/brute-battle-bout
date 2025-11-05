@@ -40,6 +40,9 @@ import { WinStreakDisplay } from '@/components/WinStreakDisplay';
 import { SessionProgress } from '@/components/SessionProgress';
 import { HourlyChallenges } from '@/components/HourlyChallenges';
 import { AchievementNotification } from '@/components/AchievementNotification';
+import { EquipmentEnhancement } from '@/components/EquipmentEnhancement';
+import { SpecializationModal } from '@/components/SpecializationModal';
+import { BuildManager } from '@/components/BuildManager';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -51,10 +54,13 @@ import { getRandomSkill, getSkillById } from '@/lib/skillsData';
 import { createDailyQuests, createWeeklyQuests, ACHIEVEMENT_QUESTS } from '@/lib/questData';
 import { ACHIEVEMENTS, TITLES } from '@/lib/achievementData';
 import { createHourlyChallenges, shouldResetHourlyChallenges, HourlyChallenge } from '@/lib/hourlyChallenges';
+import { attemptEnhancement, calculateEnhancedStats } from '@/lib/enhancementSystem';
+import { SPECIALIZATIONS } from '@/lib/specializationData';
+import { SpecializationId } from '@/types/specialization';
 import { rollPetDrop, PET_LIBRARY } from '@/lib/petData';
 import { getSkillTreeForClass } from '@/lib/skillTreeData';
 import { saveGame, loadGame, clearGame } from '@/lib/saveGame';
-import { Trophy, Swords, Backpack, Store, Coins, Target, Award, Sparkles, Hammer, Zap, RotateCcw, LogOut, Skull, Shield, Users } from 'lucide-react';
+import { Trophy, Swords, Backpack, Store, Coins, Target, Award, Sparkles, Hammer, Zap, RotateCcw, LogOut, Skull, Shield, Users, Save } from 'lucide-react';
 import { toast } from 'sonner';
 import warriorAvatar from '@/assets/avatars/warrior.png';
 import mageAvatar from '@/assets/avatars/mage.png';
@@ -152,6 +158,17 @@ const Index = () => {
     title: string;
     description: string;
   }>({ show: false, title: '', description: '' });
+  
+  // Phase 3: Equipment Enhancement
+  const [enhancementModalOpen, setEnhancementModalOpen] = useState(false);
+  const [selectedEquipmentForEnhancement, setSelectedEquipmentForEnhancement] = useState<Equipment | null>(null);
+  
+  // Phase 3: Character Specialization
+  const [specializationModalOpen, setSpecializationModalOpen] = useState(false);
+  const [characterSpecialization, setCharacterSpecialization] = useState<SpecializationId | null>(null);
+  
+  // Phase 3: Build Manager
+  const [buildManagerOpen, setBuildManagerOpen] = useState(false);
 
   // Phase 3: PvP System
   const [playerRating, setPlayerRating] = useState(1000);
@@ -841,6 +858,106 @@ const Index = () => {
     toast.success('Session reward claimed!');
   };
   
+  // Phase 3: Equipment Enhancement Handlers
+  const handleOpenEnhancement = (equipment: Equipment) => {
+    setSelectedEquipmentForEnhancement(equipment);
+    setEnhancementModalOpen(true);
+  };
+  
+  const handleEnhanceEquipment = (equipment: Equipment, useProtection: boolean) => {
+    if (!player) return;
+    
+    const result = attemptEnhancement(equipment, useProtection);
+    
+    if (result.destroyed) {
+      // Remove from inventory or equipped
+      setInventory(prev => prev.filter(item => item.id !== equipment.id));
+      Object.entries(equippedItems).forEach(([slot, item]) => {
+        if (item?.id === equipment.id) {
+          setEquippedItems(prev => ({ ...prev, [slot]: null }));
+        }
+      });
+      toast.error(result.message);
+    } else {
+      // Update equipment enhancement level
+      const updatedEquipment = { ...equipment, enhancementLevel: result.newLevel };
+      const enhancedEquipment = calculateEnhancedStats(updatedEquipment);
+      
+      // Update in inventory or equipped
+      setInventory(prev => 
+        prev.map(item => item.id === equipment.id ? enhancedEquipment : item)
+      );
+      
+      Object.entries(equippedItems).forEach(([slot, item]) => {
+        if (item?.id === equipment.id) {
+          setEquippedItems(prev => ({ ...prev, [slot]: enhancedEquipment }));
+        }
+      });
+      
+      if (result.success) {
+        toast.success(result.message);
+      } else {
+        toast.error(result.message);
+      }
+    }
+    
+    setEnhancementModalOpen(false);
+  };
+  
+  // Phase 3: Specialization Handlers
+  const handleSelectSpecialization = (specializationId: string) => {
+    if (!player || player.level < 10) {
+      toast.error('You need to reach level 10 to specialize!');
+      return;
+    }
+    
+    if (characterSpecialization) {
+      toast.error('You have already chosen a specialization!');
+      return;
+    }
+    
+    const spec = SPECIALIZATIONS[specializationId];
+    if (!spec) return;
+    
+    setCharacterSpecialization(spec.id);
+    
+    // Apply specialization bonuses
+    const updatedPlayer = { ...player };
+    if (spec.bonuses.attack) updatedPlayer.stats.attack += spec.bonuses.attack;
+    if (spec.bonuses.defense) updatedPlayer.stats.defense += spec.bonuses.defense;
+    if (spec.bonuses.speed) updatedPlayer.stats.speed += spec.bonuses.speed;
+    if (spec.bonuses.health) {
+      updatedPlayer.stats.maxHealth += spec.bonuses.health;
+      updatedPlayer.stats.health = updatedPlayer.stats.maxHealth;
+    }
+    if (spec.bonuses.evasion) updatedPlayer.stats.evasion += spec.bonuses.evasion;
+    if (spec.bonuses.critChance) updatedPlayer.stats.critChance += spec.bonuses.critChance;
+    if (spec.bonuses.luck) updatedPlayer.stats.luck += spec.bonuses.luck;
+    
+    setPlayer(updatedPlayer);
+    toast.success(`You are now a ${spec.name}!`, {
+      description: spec.uniqueAbility.name + ' ability unlocked!',
+    });
+  };
+  
+  // Phase 3: Build Management Handlers
+  const handleLoadBuild = (build: any) => {
+    if (!player) return;
+    
+    const buildData = build.character_data;
+    
+    // Load stats (but preserve level and XP)
+    const updatedPlayer = { ...player };
+    updatedPlayer.stats = { ...buildData.stats };
+    
+    setPlayer(updatedPlayer);
+    setEquippedItems(buildData.equipment || { weapon: null, armor: null, accessory: null });
+    setAcquiredSkills(buildData.skills || []);
+    setCharacterSpecialization(buildData.specialization || null);
+    
+    toast.success('Build loaded successfully!');
+  };
+  
   const handleClaimHourlyChallenge = (challengeId: string) => {
     const challenge = hourlyChallenges.find(c => c.id === challengeId);
     if (!challenge || !challenge.completed || challenge.claimed || !player) return;
@@ -1433,6 +1550,14 @@ const Index = () => {
               <Zap className="w-4 w-4 mr-1" />
               Skills ({skillPoints} SP)
             </Button>
+            <Button variant="outline" size="sm" onClick={() => setSpecializationModalOpen(true)}>
+              <Sparkles className="w-4 h-4 mr-1" />
+              Specialization
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setBuildManagerOpen(true)}>
+              <Save className="w-4 h-4 mr-1" />
+              Builds
+            </Button>
             <Button 
               variant="outline" 
               size="sm" 
@@ -1559,6 +1684,42 @@ const Index = () => {
           skillPoints={skillPoints}
           onUnlockNode={handleUnlockSkillNode}
         />
+        
+        {/* Phase 3 Modals */}
+        <EquipmentEnhancement
+          open={enhancementModalOpen}
+          onClose={() => setEnhancementModalOpen(false)}
+          equipment={selectedEquipmentForEnhancement}
+          playerGold={player?.gold || 0}
+          materials={craftingMaterials}
+          onEnhance={handleEnhanceEquipment}
+        />
+        
+        {player && (
+          <>
+            <SpecializationModal
+              open={specializationModalOpen}
+              onClose={() => setSpecializationModalOpen(false)}
+              characterClass={player.class}
+              currentLevel={player.level}
+              currentSpecialization={characterSpecialization}
+              onSelectSpecialization={handleSelectSpecialization}
+            />
+            
+            {user && (
+              <BuildManager
+                open={buildManagerOpen}
+                onClose={() => setBuildManagerOpen(false)}
+                currentCharacter={player}
+                currentEquipment={equippedItems}
+                currentSkills={acquiredSkills}
+                currentSpecialization={characterSpecialization}
+                userId={user.id}
+                onLoadBuild={handleLoadBuild}
+              />
+            )}
+          </>
+        )}
 
         {user && (
           <PrestigeModal

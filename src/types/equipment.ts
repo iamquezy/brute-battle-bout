@@ -18,6 +18,7 @@ export interface Equipment {
     critChance?: number;
     luck?: number;
   };
+  enhancementLevel?: number; // +0 to +10
 }
 
 export interface EquipmentSlots {

@@ -799,6 +799,39 @@ export type Database = {
         }
         Relationships: []
       }
+      saved_builds: {
+        Row: {
+          character_class: string
+          character_data: Json
+          character_level: number
+          created_at: string
+          id: string
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          character_class: string
+          character_data?: Json
+          character_level?: number
+          created_at?: string
+          id?: string
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          character_class?: string
+          character_data?: Json
+          character_level?: number
+          created_at?: string
+          id?: string
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       story_quests: {
         Row: {
           completed: boolean | null
