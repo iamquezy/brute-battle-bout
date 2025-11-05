@@ -41,7 +41,17 @@ interface CombatArenaProps {
   player: Character;
   opponentId?: string;
   difficulty?: DifficultyTier;
-  onCombatEnd: (victory: boolean, expGained: number, goldGained: number, opponentName?: string) => void;
+  onCombatEnd: (
+    victory: boolean, 
+    expGained: number, 
+    goldGained: number, 
+    opponentName?: string,
+    stats?: {
+      damageDealt: number;
+      critsLanded: number;
+      perfectTimings: number;
+    }
+  ) => void;
 }
 
 export function CombatArena({ player, opponentId, difficulty = 'normal', onCombatEnd }: CombatArenaProps) {
@@ -58,6 +68,8 @@ export function CombatArena({ player, opponentId, difficulty = 'normal', onComba
   const [comboCount, setComboCount] = useState(0);
   const [currentEvent, setCurrentEvent] = useState<any>(null);
   const [totalDamageDealt, setTotalDamageDealt] = useState(0);
+  const [critCount, setCritCount] = useState(0);
+  const [perfectTimingCount, setPerfectTimingCount] = useState(0);
   
   // New interactive combat states
   const [waitingForPlayerAction, setWaitingForPlayerAction] = useState(false);
@@ -162,6 +174,8 @@ export function CombatArena({ player, opponentId, difficulty = 'normal', onComba
         setEnemyHealth((prev) => Math.max(0, prev - finalDamage));
         setComboCount(prev => prev + 1);
         setTotalDamageDealt(prev => prev + finalDamage);
+        if (result.isCrit) setCritCount(prev => prev + 1);
+        if (damageBonus >= 1.5) setPerfectTimingCount(prev => prev + 1);
         addLog(`⚔️ ${attacker.name} ${attackType} for ${finalDamage} damage!${critText}${comboText}${bonusText}`, 'attack', '⚔️');
         if (result.isCrit) toast.success('Critical Hit!');
         if (result.comboMultiplier >= 2) toast.success(`${comboCount + 1}x Combo!`);
@@ -278,12 +292,20 @@ export function CombatArena({ player, opponentId, difficulty = 'normal', onComba
       addLog(`✅ Victory! Gained ${baseExp} experience!`, 'victory', '✅');
       playVictory();
       toast.success(`Victory! +${baseExp} EXP`);
-      setTimeout(() => onCombatEnd(true, baseExp, baseGold, enemy.name), 1000);
+      setTimeout(() => onCombatEnd(true, baseExp, baseGold, enemy.name, {
+        damageDealt: 0,
+        critsLanded: 0,
+        perfectTimings: 0,
+      }), 1000);
     } else {
       addLog('☠️ You have been defeated...', 'defeat', '☠️');
       playDefeat();
       toast.error('Defeat!');
-      setTimeout(() => onCombatEnd(false, 0, 0, enemy.name), 1000);
+      setTimeout(() => onCombatEnd(false, 0, 0, enemy.name, {
+        damageDealt: 0,
+        critsLanded: 0,
+        perfectTimings: 0,
+      }), 1000);
     }
   };
 
@@ -333,7 +355,11 @@ export function CombatArena({ player, opponentId, difficulty = 'normal', onComba
       addLog('☠️ You have been defeated...', 'defeat', '☠️');
       playDefeat();
       toast.error('Defeat!');
-      setTimeout(() => onCombatEnd(false, 0, 0, enemy.name), 1500);
+      setTimeout(() => onCombatEnd(false, 0, 0, enemy.name, {
+        damageDealt: totalDamageDealt,
+        critsLanded: critCount,
+        perfectTimings: perfectTimingCount,
+      }), 1500);
     } else if (enemyHealth <= 0) {
       setCombatEnded(true);
       const baseExp = enemy.level * 50 + 25;
@@ -341,7 +367,11 @@ export function CombatArena({ player, opponentId, difficulty = 'normal', onComba
       addLog(`✅ Victory! Gained ${baseExp} experience!`, 'victory', '✅');
       playVictory();
       toast.success(`Victory! +${baseExp} EXP, +${baseGold} Gold`);
-      setTimeout(() => onCombatEnd(true, baseExp, baseGold, enemy.name), 1500);
+      setTimeout(() => onCombatEnd(true, baseExp, baseGold, enemy.name, {
+        damageDealt: totalDamageDealt,
+        critsLanded: critCount,
+        perfectTimings: perfectTimingCount,
+      }), 1500);
     }
   }, [playerHealth, enemyHealth, combatEnded]);
 

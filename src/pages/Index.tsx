@@ -36,6 +36,10 @@ import { Pets } from '@/components/Pets';
 import { Crafting } from '@/components/Crafting';
 import { TrainingGround } from '@/components/TrainingGround';
 import { SkillTree } from '@/components/SkillTree';
+import { WinStreakDisplay } from '@/components/WinStreakDisplay';
+import { SessionProgress } from '@/components/SessionProgress';
+import { HourlyChallenges } from '@/components/HourlyChallenges';
+import { AchievementNotification } from '@/components/AchievementNotification';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -46,6 +50,7 @@ import { generateEquipment, shouldDropLoot, calculateEquipmentStats } from '@/li
 import { getRandomSkill, getSkillById } from '@/lib/skillsData';
 import { createDailyQuests, createWeeklyQuests, ACHIEVEMENT_QUESTS } from '@/lib/questData';
 import { ACHIEVEMENTS, TITLES } from '@/lib/achievementData';
+import { createHourlyChallenges, shouldResetHourlyChallenges, HourlyChallenge } from '@/lib/hourlyChallenges';
 import { rollPetDrop, PET_LIBRARY } from '@/lib/petData';
 import { getSkillTreeForClass } from '@/lib/skillTreeData';
 import { saveGame, loadGame, clearGame } from '@/lib/saveGame';
@@ -120,6 +125,33 @@ const Index = () => {
   const [lastWeeklyReset, setLastWeeklyReset] = useState(Date.now());
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
+
+  // Phase 2 Enhancement: Win Streaks
+  const [winStreak, setWinStreak] = useState(0);
+  const [bestStreak, setBestStreak] = useState(0);
+  
+  // Phase 2 Enhancement: Session Progress
+  const [sessionStats, setSessionStats] = useState({
+    wins: 0,
+    totalBattles: 0,
+    damageDealt: 0,
+    goldEarned: 0,
+    criticalHits: 0,
+    perfectTimings: 0,
+    startTime: Date.now(),
+  });
+  const [sessionRewardsClaimed, setSessionRewardsClaimed] = useState<number[]>([]);
+  
+  // Phase 2 Enhancement: Hourly Challenges
+  const [hourlyChallenges, setHourlyChallenges] = useState<any[]>([]);
+  const [lastHourlyReset, setLastHourlyReset] = useState(Date.now());
+  
+  // Phase 2 Enhancement: Achievement Notifications
+  const [achievementNotification, setAchievementNotification] = useState<{
+    show: boolean;
+    title: string;
+    description: string;
+  }>({ show: false, title: '', description: '' });
 
   // Phase 3: PvP System
   const [playerRating, setPlayerRating] = useState(1000);
@@ -236,6 +268,24 @@ const Index = () => {
             setWeeklyQuests(createWeeklyQuests());
             setLastWeeklyReset(now);
           }
+          
+          // Initialize hourly challenges if needed (using type assertion for new properties)
+          const extendedData = data as any;
+          const hasHourlyChallenges = extendedData.hourlyChallenges && Array.isArray(extendedData.hourlyChallenges);
+          const lastReset = extendedData.lastHourlyReset || 0;
+          if (!hasHourlyChallenges || shouldResetHourlyChallenges(lastReset)) {
+            setHourlyChallenges(createHourlyChallenges());
+            setLastHourlyReset(now);
+          } else {
+            setHourlyChallenges(extendedData.hourlyChallenges);
+            setLastHourlyReset(lastReset);
+          }
+          
+          // Load Phase 2 data
+          if (extendedData.winStreak !== undefined) setWinStreak(extendedData.winStreak);
+          if (extendedData.bestStreak !== undefined) setBestStreak(extendedData.bestStreak);
+          if (extendedData.sessionStats) setSessionStats(extendedData.sessionStats);
+          if (extendedData.sessionRewardsClaimed) setSessionRewardsClaimed(extendedData.sessionRewardsClaimed);
 
           setGameState('hub');
         } else {
@@ -405,6 +455,8 @@ const Index = () => {
     setAchievementQuests([...ACHIEVEMENT_QUESTS]);
     setAchievements([...ACHIEVEMENTS]);
     setSkillTreeNodes(getSkillTreeForClass(characterClass).nodes);
+    setHourlyChallenges(createHourlyChallenges());
+    setLastHourlyReset(Date.now());
     
     // Initialize the title from default achievement
     setCurrentTitle('rookie');
@@ -412,8 +464,16 @@ const Index = () => {
     setGameState('hub');
   };
 
-  const handleCombatEnd = (victory: boolean, expGained: number, goldGained: number, opponentName?: string) => {
+  const handleCombatEnd = (victory: boolean, expGained: number, goldGained: number, opponentName?: string, stats?: { damageDealt: number; critsLanded: number; perfectTimings: number }) => {
     if (!player) return;
+
+    // Update combat stats and handle victory/defeat
+    if (victory && stats) {
+      const bonusGold = handleCombatVictory(goldGained, stats.damageDealt, stats.critsLanded, stats.perfectTimings);
+      goldGained += bonusGold;
+    } else if (!victory) {
+      handleCombatDefeat();
+    }
 
     const result: 'victory' | 'defeat' = victory ? 'victory' : 'defeat';
     setBattleHistory(prev => [{
@@ -676,7 +736,11 @@ const Index = () => {
       const isCompleted = newProgress >= ach.requirement;
       
       if (isCompleted && !wasCompleted) {
-        toast.success(`Achievement Unlocked: ${ach.name}!`);
+        setAchievementNotification({
+          show: true,
+          title: ach.name,
+          description: ach.description,
+        });
         if (ach.unlocksTitle) {
           toast.success(`New title unlocked: ${TITLES[ach.unlocksTitle].name}!`);
         }
@@ -684,6 +748,119 @@ const Index = () => {
       
       return { ...ach, progress: newProgress, completed: isCompleted };
     }));
+  };
+  
+  // Phase 2: Win Streak Handler
+  const handleCombatVictory = (goldEarned: number, damageDealt: number, crits: number, perfectTimings: number = 0) => {
+    // Update win streak
+    const newStreak = winStreak + 1;
+    setWinStreak(newStreak);
+    if (newStreak > bestStreak) {
+      setBestStreak(newStreak);
+      if (newStreak % 5 === 0) {
+        toast.success(`${newStreak} Win Streak! 🔥`, {
+          description: `Bonus: +${Math.floor(newStreak / 3) * 10}% gold`
+        });
+      }
+    }
+    
+    // Apply streak bonus to gold
+    const streakBonus = Math.floor(newStreak / 3) * 0.1;
+    const bonusGold = Math.floor(goldEarned * streakBonus);
+    
+    // Update session stats
+    setSessionStats(prev => ({
+      ...prev,
+      wins: prev.wins + 1,
+      totalBattles: prev.totalBattles + 1,
+      damageDealt: prev.damageDealt + damageDealt,
+      goldEarned: prev.goldEarned + goldEarned + bonusGold,
+      criticalHits: prev.criticalHits + crits,
+      perfectTimings: prev.perfectTimings + perfectTimings,
+    }));
+    
+    // Update hourly challenges
+    setHourlyChallenges(prev => prev.map(challenge => {
+      if (challenge.completed) return challenge;
+      
+      let progress = challenge.progress;
+      if (challenge.objective === 'win_battles') progress += 1;
+      if (challenge.objective === 'deal_damage') progress += damageDealt;
+      if (challenge.objective === 'land_crits') progress += crits;
+      if (challenge.objective === 'perfect_timing') progress += perfectTimings;
+      
+      const completed = progress >= challenge.target;
+      if (completed && !challenge.completed) {
+        toast.success(`Challenge Complete: ${challenge.name}!`);
+      }
+      
+      return { ...challenge, progress, completed };
+    }));
+    
+    return bonusGold;
+  };
+  
+  const handleCombatDefeat = () => {
+    setWinStreak(0);
+    setSessionStats(prev => ({
+      ...prev,
+      totalBattles: prev.totalBattles + 1,
+    }));
+  };
+  
+  const handleClaimSessionReward = (tier: number) => {
+    if (sessionRewardsClaimed.includes(tier)) return;
+    
+    const rewards = [
+      { gold: 100 },
+      { gold: 0, item: true },
+      { gold: 300, skillToken: true },
+      { gold: 0, item: true },
+      { gold: 1000, item: true },
+    ];
+    
+    const reward = rewards[tier - 1];
+    if (!player) return;
+    
+    const updatedPlayer = { ...player };
+    if (reward.gold) updatedPlayer.gold += reward.gold;
+    if (reward.item) {
+      const rarity = tier === 2 ? 'rare' : tier === 4 ? 'epic' : 'legendary';
+      const loot = generateEquipment(
+        ['weapon', 'armor', 'accessory'][Math.floor(Math.random() * 3)] as any,
+        player.class
+      );
+      setInventory(prev => [...prev, loot]);
+    }
+    if (reward.skillToken) {
+      setSkillPoints(prev => prev + 1);
+    }
+    
+    setPlayer(updatedPlayer);
+    setSessionRewardsClaimed(prev => [...prev, tier]);
+    toast.success('Session reward claimed!');
+  };
+  
+  const handleClaimHourlyChallenge = (challengeId: string) => {
+    const challenge = hourlyChallenges.find(c => c.id === challengeId);
+    if (!challenge || !challenge.completed || challenge.claimed || !player) return;
+    
+    const updatedPlayer = { ...player };
+    if (challenge.reward.gold) updatedPlayer.gold += challenge.reward.gold;
+    if (challenge.reward.exp) updatedPlayer.experience += challenge.reward.exp;
+    if (challenge.reward.item) {
+      const loot = generateEquipment(
+        ['weapon', 'armor', 'accessory'][Math.floor(Math.random() * 3)] as any,
+        player.class
+      );
+      setInventory(prev => [...prev, loot]);
+    }
+    
+    setPlayer(updatedPlayer);
+    setHourlyChallenges(prev => prev.map(c => 
+      c.id === challengeId ? { ...c, claimed: true } : c
+    ));
+    toast.success('Challenge reward claimed!');
   };
   
   // Phase 2: Quest Handlers
@@ -1393,14 +1570,33 @@ const Index = () => {
           />
         )}
 
+        {/* Achievement Notification */}
+        <AchievementNotification
+          show={achievementNotification.show}
+          title={achievementNotification.title}
+          description={achievementNotification.description}
+          onComplete={() => setAchievementNotification({ show: false, title: '', description: '' })}
+        />
+
         {/* Main Layout: 3 columns */}
         <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left: Battle History */}
-          <Card className="p-6 bg-card/95 backdrop-blur-sm border-2 border-primary/30 shadow-combat">
-            <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-              <Trophy className="w-6 h-6 text-primary" />
-              Battle History
-            </h2>
+          {/* Left: Win Streak, Challenges, Battle History */}
+          <div className="space-y-4">
+            <WinStreakDisplay 
+              currentStreak={winStreak}
+              bestStreak={bestStreak}
+            />
+            
+            <HourlyChallenges 
+              challenges={hourlyChallenges}
+              onClaim={handleClaimHourlyChallenge}
+            />
+            
+            <Card className="p-6 bg-card/95 backdrop-blur-sm border-2 border-primary/30 shadow-combat">
+              <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
+                <Trophy className="w-6 h-6 text-primary" />
+                Battle History
+              </h2>
             <div className="space-y-2 mb-4">
               <div className="flex justify-between text-lg font-bold">
                 <span className="text-green-400">Victories: {wins}</span>
@@ -1435,7 +1631,8 @@ const Index = () => {
                 ))
               )}
             </div>
-          </Card>
+            </Card>
+          </div>
 
           {/* Center: Character Stats */}
           <Card className="p-6 bg-card/95 backdrop-blur-sm border-2 border-primary/30 shadow-combat">
@@ -1548,6 +1745,12 @@ const Index = () => {
 
           {/* Right: Equipment & Skills */}
           <div className="space-y-6">
+            <SessionProgress 
+              stats={sessionStats}
+              onClaimReward={handleClaimSessionReward}
+              claimedTiers={sessionRewardsClaimed}
+            />
+            
             <Card className="p-4 bg-card/95 backdrop-blur-sm border-2 border-primary/30 shadow-combat">
               <h2 className="text-xl font-bold mb-3 flex items-center gap-2">
                 <Backpack className="w-5 h-5 text-primary" />
