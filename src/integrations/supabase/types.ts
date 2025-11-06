@@ -715,6 +715,42 @@ export type Database = {
         }
         Relationships: []
       }
+      mythic_plus_runs: {
+        Row: {
+          completed_at: string
+          completion_time: number
+          deaths: number
+          dungeon_id: string
+          id: string
+          keystone_level: number
+          rewards: Json
+          score: number
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string
+          completion_time: number
+          deaths?: number
+          dungeon_id: string
+          id?: string
+          keystone_level: number
+          rewards?: Json
+          score: number
+          user_id: string
+        }
+        Update: {
+          completed_at?: string
+          completion_time?: number
+          deaths?: number
+          dungeon_id?: string
+          id?: string
+          keystone_level?: number
+          rewards?: Json
+          score?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       prestige_records: {
         Row: {
           bonuses: Json
@@ -947,6 +983,80 @@ export type Database = {
         }
         Relationships: []
       }
+      seasonal_event_participants: {
+        Row: {
+          event_id: string
+          id: string
+          joined_at: string
+          progress: Json
+          rewards_claimed: boolean
+          user_id: string
+        }
+        Insert: {
+          event_id: string
+          id?: string
+          joined_at?: string
+          progress?: Json
+          rewards_claimed?: boolean
+          user_id: string
+        }
+        Update: {
+          event_id?: string
+          id?: string
+          joined_at?: string
+          progress?: Json
+          rewards_claimed?: boolean
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seasonal_event_participants_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "seasonal_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      seasonal_events: {
+        Row: {
+          created_at: string
+          description: string | null
+          end_date: string
+          event_name: string
+          event_type: string
+          id: string
+          requirements: Json
+          rewards: Json
+          start_date: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          end_date: string
+          event_name: string
+          event_type: string
+          id?: string
+          requirements?: Json
+          rewards?: Json
+          start_date: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          end_date?: string
+          event_name?: string
+          event_type?: string
+          id?: string
+          requirements?: Json
+          rewards?: Json
+          start_date?: string
+          status?: string
+        }
+        Relationships: []
+      }
       story_quests: {
         Row: {
           completed: boolean | null
@@ -1110,6 +1220,77 @@ export type Database = {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
+        }
+        Relationships: []
+      }
+      world_boss_participants: {
+        Row: {
+          attacks_made: number
+          boss_id: string
+          damage_dealt: number
+          id: string
+          joined_at: string
+          user_id: string
+        }
+        Insert: {
+          attacks_made?: number
+          boss_id: string
+          damage_dealt?: number
+          id?: string
+          joined_at?: string
+          user_id: string
+        }
+        Update: {
+          attacks_made?: number
+          boss_id?: string
+          damage_dealt?: number
+          id?: string
+          joined_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "world_boss_participants_boss_id_fkey"
+            columns: ["boss_id"]
+            isOneToOne: false
+            referencedRelation: "world_bosses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      world_bosses: {
+        Row: {
+          boss_id: string
+          current_health: number
+          defeated_at: string | null
+          id: string
+          max_health: number
+          spawned_at: string
+          status: string
+          total_damage: number
+          total_participants: number
+        }
+        Insert: {
+          boss_id: string
+          current_health: number
+          defeated_at?: string | null
+          id?: string
+          max_health: number
+          spawned_at?: string
+          status?: string
+          total_damage?: number
+          total_participants?: number
+        }
+        Update: {
+          boss_id?: string
+          current_health?: number
+          defeated_at?: string | null
+          id?: string
+          max_health?: number
+          spawned_at?: string
+          status?: string
+          total_damage?: number
+          total_participants?: number
         }
         Relationships: []
       }

@@ -44,6 +44,9 @@ import { EquipmentEnhancement } from '@/components/EquipmentEnhancement';
 import { SpecializationModal } from '@/components/SpecializationModal';
 import { BuildManager } from '@/components/BuildManager';
 import { LeaderboardRewards } from '@/components/LeaderboardRewards';
+import { WorldBoss } from '@/components/WorldBoss';
+import { SeasonalEvents } from '@/components/SeasonalEvents';
+import { MythicPlusHub } from '@/components/MythicPlusHub';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -67,7 +70,7 @@ import warriorAvatar from '@/assets/avatars/warrior.png';
 import mageAvatar from '@/assets/avatars/mage.png';
 import archerAvatar from '@/assets/avatars/archer.png';
 
-type GameState = 'creation' | 'hub' | 'opponent-selection' | 'difficulty-selection' | 'combat' | 'levelup' | 'pvp-hub' | 'pvp-combat' | 'boss-selection' | 'boss-battle' | 'guild-hub' | 'cosmetics' | 'hall-of-fame' | 'training' | 'tournament-hub';
+type GameState = 'creation' | 'hub' | 'opponent-selection' | 'difficulty-selection' | 'combat' | 'levelup' | 'pvp-hub' | 'pvp-combat' | 'boss-selection' | 'boss-battle' | 'guild-hub' | 'cosmetics' | 'hall-of-fame' | 'training' | 'tournament-hub' | 'world-boss' | 'seasonal-events' | 'mythic-plus';
 
 interface BattleRecord {
   opponent: string;
@@ -173,6 +176,10 @@ const Index = () => {
   
   // Phase 4: Leaderboard Rewards
   const [leaderboardRewardsOpen, setLeaderboardRewardsOpen] = useState(false);
+  
+  // Phase 5: Endgame Content
+  const [selectedMythicDungeon, setSelectedMythicDungeon] = useState<string>('');
+  const [selectedMythicLevel, setSelectedMythicLevel] = useState<number>(1);
 
   // Phase 3: PvP System
   const [playerRating, setPlayerRating] = useState(1000);
@@ -958,6 +965,15 @@ const Index = () => {
     toast.success('Leaderboard rewards claimed!');
   };
   
+  // Phase 5: Mythic+ Handler
+  const handleStartMythicRun = (dungeonId: string, level: number) => {
+    setSelectedMythicDungeon(dungeonId);
+    setSelectedMythicLevel(level);
+    toast.success(`Starting Mythic +${level} run!`, {
+      description: 'Feature coming soon - will launch dungeon run'
+    });
+  };
+  
   // Phase 3: Build Management Handlers
   const handleLoadBuild = (build: any) => {
     if (!player) return;
@@ -1500,6 +1516,36 @@ const Index = () => {
     );
   }
 
+  if (gameState === 'world-boss' && player && user) {
+    return (
+      <WorldBoss 
+        userId={user.id}
+        player={player}
+        onBack={() => setGameState('hub')}
+      />
+    );
+  }
+
+  if (gameState === 'seasonal-events' && player && user) {
+    return (
+      <SeasonalEvents 
+        userId={user.id}
+        onBack={() => setGameState('hub')}
+      />
+    );
+  }
+
+  if (gameState === 'mythic-plus' && player && user) {
+    return (
+      <MythicPlusHub 
+        userId={user.id}
+        player={player}
+        onStartRun={handleStartMythicRun}
+        onBack={() => setGameState('hub')}
+      />
+    );
+  }
+
   // Hub
   if (gameState === 'hub' && player) {
     const expNeeded = player.level * 100;
@@ -1653,6 +1699,33 @@ const Index = () => {
               <Trophy className="w-4 h-4 mr-1" />
               Rewards
             </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setGameState('world-boss')}
+              disabled={!user}
+            >
+              <Skull className="w-4 h-4 mr-1" />
+              World Boss
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setGameState('seasonal-events')}
+              disabled={!user}
+            >
+              <Sparkles className="w-4 h-4 mr-1" />
+              Events
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setGameState('mythic-plus')}
+              disabled={!user}
+            >
+              <Zap className="w-4 h-4 mr-1" />
+              Mythic+
+            </Button>
           </div>
         </div>
         
@@ -1748,8 +1821,10 @@ const Index = () => {
           </>
         )}
 
-        {user && leaderboardRewardsOpen && (
+        {user && (
           <LeaderboardRewards
+            open={leaderboardRewardsOpen}
+            onClose={() => setLeaderboardRewardsOpen(false)}
             userId={user.id}
             onClaimReward={handleClaimLeaderboardReward}
           />

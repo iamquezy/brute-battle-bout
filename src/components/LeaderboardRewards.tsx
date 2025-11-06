@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -21,11 +21,13 @@ interface LeaderboardReward {
 }
 
 interface LeaderboardRewardsProps {
+  open: boolean;
+  onClose: () => void;
   userId: string;
   onClaimReward: (rewards: any) => void;
 }
 
-export function LeaderboardRewards({ userId, onClaimReward }: LeaderboardRewardsProps) {
+export function LeaderboardRewards({ open, onClose, userId, onClaimReward }: LeaderboardRewardsProps) {
   const [rewards, setRewards] = useState<LeaderboardReward[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -77,32 +79,24 @@ export function LeaderboardRewards({ userId, onClaimReward }: LeaderboardRewards
     return <Badge variant="outline">#{rank}</Badge>;
   };
 
-  if (loading) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Leaderboard Rewards</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground">Loading...</p>
-        </CardContent>
-      </Card>
-    );
-  }
-
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Gift className="h-5 w-5" />
-          Leaderboard Rewards
-        </CardTitle>
-        <CardDescription>
-          Claim your competitive season rewards
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        {rewards.length === 0 ? (
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="max-w-2xl max-h-[80vh]">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Gift className="h-5 w-5" />
+            Leaderboard Rewards
+          </DialogTitle>
+          <DialogDescription>
+            Claim your competitive season rewards
+          </DialogDescription>
+        </DialogHeader>
+        
+        {loading ? (
+          <div className="py-8 text-center">
+            <p className="text-muted-foreground">Loading...</p>
+          </div>
+        ) : rewards.length === 0 ? (
           <div className="text-center py-8">
             <Gift className="h-12 w-12 mx-auto mb-2 text-muted-foreground" />
             <p className="text-muted-foreground">No rewards available</p>
@@ -111,7 +105,7 @@ export function LeaderboardRewards({ userId, onClaimReward }: LeaderboardRewards
             </p>
           </div>
         ) : (
-          <ScrollArea className="h-[400px]">
+          <ScrollArea className="h-[400px] pr-4">
             <div className="space-y-3">
               {rewards.map((reward) => (
                 <div
@@ -173,7 +167,7 @@ export function LeaderboardRewards({ userId, onClaimReward }: LeaderboardRewards
             </div>
           </ScrollArea>
         )}
-      </CardContent>
-    </Card>
+      </DialogContent>
+    </Dialog>
   );
 }
