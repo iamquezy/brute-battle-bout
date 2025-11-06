@@ -43,6 +43,7 @@ import { AchievementNotification } from '@/components/AchievementNotification';
 import { EquipmentEnhancement } from '@/components/EquipmentEnhancement';
 import { SpecializationModal } from '@/components/SpecializationModal';
 import { BuildManager } from '@/components/BuildManager';
+import { LeaderboardRewards } from '@/components/LeaderboardRewards';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -169,6 +170,9 @@ const Index = () => {
   
   // Phase 3: Build Manager
   const [buildManagerOpen, setBuildManagerOpen] = useState(false);
+  
+  // Phase 4: Leaderboard Rewards
+  const [leaderboardRewardsOpen, setLeaderboardRewardsOpen] = useState(false);
 
   // Phase 3: PvP System
   const [playerRating, setPlayerRating] = useState(1000);
@@ -940,6 +944,20 @@ const Index = () => {
     });
   };
   
+  // Phase 4: Leaderboard Rewards Handler
+  const handleClaimLeaderboardReward = (rewards: any) => {
+    if (!player) return;
+    
+    let updatedPlayer = { ...player };
+    
+    if (rewards.gold) {
+      updatedPlayer.gold += rewards.gold;
+    }
+    
+    setPlayer(updatedPlayer);
+    toast.success('Leaderboard rewards claimed!');
+  };
+  
   // Phase 3: Build Management Handlers
   const handleLoadBuild = (build: any) => {
     if (!player) return;
@@ -1626,6 +1644,15 @@ const Index = () => {
               <Sparkles className="w-4 h-4 mr-1 text-yellow-500" />
               Prestige
             </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setLeaderboardRewardsOpen(true)}
+              disabled={!user}
+            >
+              <Trophy className="w-4 h-4 mr-1" />
+              Rewards
+            </Button>
           </div>
         </div>
         
@@ -1719,6 +1746,13 @@ const Index = () => {
               />
             )}
           </>
+        )}
+
+        {user && leaderboardRewardsOpen && (
+          <LeaderboardRewards
+            userId={user.id}
+            onClaimReward={handleClaimLeaderboardReward}
+          />
         )}
 
         {user && (

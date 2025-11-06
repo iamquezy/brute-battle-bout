@@ -345,6 +345,91 @@ export type Database = {
           },
         ]
       }
+      guild_raid_participants: {
+        Row: {
+          attacks_made: number
+          damage_dealt: number
+          id: string
+          joined_at: string
+          raid_id: string
+          user_id: string
+        }
+        Insert: {
+          attacks_made?: number
+          damage_dealt?: number
+          id?: string
+          joined_at?: string
+          raid_id: string
+          user_id: string
+        }
+        Update: {
+          attacks_made?: number
+          damage_dealt?: number
+          id?: string
+          joined_at?: string
+          raid_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guild_raid_participants_raid_id_fkey"
+            columns: ["raid_id"]
+            isOneToOne: false
+            referencedRelation: "guild_raids"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      guild_raids: {
+        Row: {
+          boss_health: number
+          boss_max_health: number
+          completed_at: string | null
+          guild_id: string
+          id: string
+          participant_count: number
+          raid_boss_id: string
+          rewards_claimed: boolean
+          started_at: string
+          status: string
+          total_damage: number
+        }
+        Insert: {
+          boss_health: number
+          boss_max_health: number
+          completed_at?: string | null
+          guild_id: string
+          id?: string
+          participant_count?: number
+          raid_boss_id: string
+          rewards_claimed?: boolean
+          started_at?: string
+          status?: string
+          total_damage?: number
+        }
+        Update: {
+          boss_health?: number
+          boss_max_health?: number
+          completed_at?: string | null
+          guild_id?: string
+          id?: string
+          participant_count?: number
+          raid_boss_id?: string
+          rewards_claimed?: boolean
+          started_at?: string
+          status?: string
+          total_damage?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guild_raids_guild_id_fkey"
+            columns: ["guild_id"]
+            isOneToOne: false
+            referencedRelation: "guilds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       guild_war_matches: {
         Row: {
           attacker_id: string
@@ -599,6 +684,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      leaderboard_rewards: {
+        Row: {
+          claimed: boolean
+          created_at: string
+          id: string
+          rank: number
+          rewards: Json
+          season: string
+          user_id: string
+        }
+        Insert: {
+          claimed?: boolean
+          created_at?: string
+          id?: string
+          rank: number
+          rewards?: Json
+          season: string
+          user_id: string
+        }
+        Update: {
+          claimed?: boolean
+          created_at?: string
+          id?: string
+          rank?: number
+          rewards?: Json
+          season?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       prestige_records: {
         Row: {

@@ -23,7 +23,8 @@ import {
 } from '@/lib/guildSystem';
 import { GuildWars } from '@/components/GuildWars';
 import { TerritoryControl } from '@/components/TerritoryControl';
-import { Users, Shield, ArrowLeft, Crown, Send, Search, Plus, LogOut, Swords, MapPin } from 'lucide-react';
+import { GuildRaids } from '@/components/GuildRaids';
+import { Users, Shield, ArrowLeft, Crown, Send, Search, Plus, LogOut, Swords, MapPin, Skull } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -316,12 +317,16 @@ export function GuildHub({ player, userId, username, onBack }: GuildHubProps) {
             </CardHeader>
             <CardContent>
               <Tabs defaultValue="chat">
-                <TabsList className="grid w-full grid-cols-4">
+                <TabsList className="grid w-full grid-cols-5">
                   <TabsTrigger value="chat">Guild Chat</TabsTrigger>
                   <TabsTrigger value="members">Members ({guildMembers.length})</TabsTrigger>
                   <TabsTrigger value="wars">
                     <Swords className="h-4 w-4 mr-2" />
-                    Guild Wars
+                    Wars
+                  </TabsTrigger>
+                  <TabsTrigger value="raids">
+                    <Skull className="h-4 w-4 mr-2" />
+                    Raids
                   </TabsTrigger>
                   <TabsTrigger value="territory">
                     <MapPin className="h-4 w-4 mr-2" />
@@ -424,6 +429,15 @@ export function GuildHub({ player, userId, username, onBack }: GuildHubProps) {
                     userGuildId={userGuild.guild.id}
                     isGuildLeader={userGuild.member.rank === 'leader'}
                     onBack={() => {}}
+                  />
+                </TabsContent>
+
+                <TabsContent value="raids">
+                  <GuildRaids
+                    guildId={userGuild.guild.id}
+                    userId={userId}
+                    player={player}
+                    isLeader={userGuild.member.rank === 'leader'}
                   />
                 </TabsContent>
               </Tabs>

@@ -352,6 +352,7 @@ export function PvPHub({ player, userId, playerRating, onChallengeOpponent, onBa
                           const isAttacker = match.attacker_id === userId;
                           const won = match.winner_id === userId;
                           const opponent = isAttacker ? match.defender_snapshot : match.attacker_snapshot;
+                          const opponentId = isAttacker ? match.defender_id : match.attacker_id;
                           
                           return (
                             <Card key={match.id} className={won ? 'border-green-500/50' : 'border-red-500/50'}>
@@ -368,13 +369,25 @@ export function PvPHub({ player, userId, playerRating, onChallengeOpponent, onBa
                                       </div>
                                     </div>
                                   </div>
-                                  <div className="text-right">
-                                    <div className={`font-semibold ${won ? 'text-green-500' : 'text-red-500'}`}>
-                                      {won ? '+' : ''}{match.rating_change} Rating
+                                  <div className="flex items-center gap-2">
+                                    <div className="text-right">
+                                      <div className={`font-semibold ${won ? 'text-green-500' : 'text-red-500'}`}>
+                                        {won ? '+' : ''}{match.rating_change} Rating
+                                      </div>
+                                      <div className="text-xs text-muted-foreground">
+                                        {new Date(match.created_at).toLocaleDateString()}
+                                      </div>
                                     </div>
-                                    <div className="text-xs text-muted-foreground">
-                                      {new Date(match.created_at).toLocaleDateString()}
-                                    </div>
+                                    {!won && (
+                                      <Button 
+                                        size="sm" 
+                                        variant="outline"
+                                        onClick={() => onChallengeOpponent(opponentId, opponent.name)}
+                                      >
+                                        <Swords className="h-3 w-3 mr-1" />
+                                        Revenge
+                                      </Button>
+                                    )}
                                   </div>
                                 </div>
                               </CardContent>
