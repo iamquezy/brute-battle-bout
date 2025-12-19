@@ -2,67 +2,76 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+/* Modern Minimalist Game Design System */
 
 @layer base {
-:root {
-    --background: 30 18% 12%;
-    --foreground: 35 25% 92%;
+  :root {
+    /* Core colors - Clean, modern palette */
+    --background: 220 16% 8%;
+    --foreground: 0 0% 95%;
 
-    --card: 28 20% 18%;
-    --card-foreground: 35 25% 92%;
+    --card: 220 15% 12%;
+    --card-foreground: 0 0% 95%;
 
-    --popover: 28 22% 15%;
-    --popover-foreground: 35 25% 92%;
+    --popover: 220 15% 10%;
+    --popover-foreground: 0 0% 95%;
 
-    --primary: 35 85% 55%;
-    --primary-foreground: 30 18% 12%;
+    --primary: 45 93% 58%;
+    --primary-foreground: 220 16% 8%;
 
-    --secondary: 30 15% 25%;
-    --secondary-foreground: 35 25% 92%;
+    --secondary: 220 13% 18%;
+    --secondary-foreground: 0 0% 90%;
 
-    --muted: 30 12% 22%;
-    --muted-foreground: 35 15% 65%;
+    --muted: 220 12% 16%;
+    --muted-foreground: 220 10% 55%;
 
-    --accent: 40 90% 50%;
-    --accent-foreground: 30 18% 12%;
+    --accent: 200 95% 55%;
+    --accent-foreground: 220 16% 8%;
 
-    --destructive: 0 85% 55%;
-    --destructive-foreground: 35 25% 92%;
+    --destructive: 0 72% 55%;
+    --destructive-foreground: 0 0% 95%;
 
-    --border: 30 18% 28%;
-    --input: 30 15% 24%;
-    --ring: 35 85% 55%;
+    --success: 145 65% 45%;
+    --success-foreground: 220 16% 8%;
+
+    --border: 220 13% 20%;
+    --input: 220 13% 16%;
+    --ring: 45 93% 58%;
 
     --radius: 0.75rem;
 
-    --fighter: 0 75% 55%;
-    --fighter-glow: 0 90% 65%;
-    --mage: 240 85% 60%;
-    --mage-glow: 240 95% 70%;
-    --archer: 140 70% 50%;
-    --archer-glow: 140 85% 60%;
+    /* Class colors */
+    --fighter: 0 72% 55%;
+    --fighter-glow: 0 85% 65%;
+    --mage: 260 85% 60%;
+    --mage-glow: 260 90% 70%;
+    --archer: 145 65% 45%;
+    --archer-glow: 145 75% 55%;
 
-    --arena-bg: 30 20% 10%;
-    --arena-accent: 35 25% 20%;
-    
-    --gradient-arena: linear-gradient(180deg, hsl(30 20% 10%) 0%, hsl(28 22% 14%) 50%, hsl(30 18% 12%) 100%);
-    --gradient-gold: linear-gradient(135deg, hsl(40 95% 55%) 0%, hsl(35 90% 60%) 50%, hsl(38 92% 58%) 100%);
-    --gradient-fighter: linear-gradient(135deg, hsl(0 75% 55%) 0%, hsl(0 90% 65%) 50%, hsl(10 85% 60%) 100%);
-    --gradient-mage: linear-gradient(135deg, hsl(240 85% 60%) 0%, hsl(260 90% 70%) 50%, hsl(250 88% 65%) 100%);
-    --gradient-archer: linear-gradient(135deg, hsl(140 70% 50%) 0%, hsl(160 80% 60%) 50%, hsl(150 75% 55%) 100%);
+    /* Arena */
+    --arena-bg: 220 16% 6%;
+    --arena-accent: 220 13% 14%;
 
+    /* Gradients */
+    --gradient-arena: linear-gradient(180deg, hsl(220 16% 6%) 0%, hsl(220 15% 10%) 50%, hsl(220 16% 8%) 100%);
+    --gradient-gold: linear-gradient(135deg, hsl(45 93% 58%) 0%, hsl(40 90% 55%) 50%, hsl(42 92% 56%) 100%);
+    --gradient-fighter: linear-gradient(135deg, hsl(0 72% 55%) 0%, hsl(0 85% 65%) 50%, hsl(10 78% 60%) 100%);
+    --gradient-mage: linear-gradient(135deg, hsl(260 85% 60%) 0%, hsl(280 88% 68%) 50%, hsl(270 86% 64%) 100%);
+    --gradient-archer: linear-gradient(135deg, hsl(145 65% 45%) 0%, hsl(160 70% 50%) 50%, hsl(150 68% 48%) 100%);
+    --gradient-glass: linear-gradient(145deg, hsl(220 15% 14% / 0.8) 0%, hsl(220 15% 10% / 0.6) 100%);
+
+    /* Shadows */
     --shadow-glow: 0 0 40px -5px;
     --shadow-combat: 0 15px 50px -10px rgba(0, 0, 0, 0.9);
+    --shadow-card: 0 4px 24px -2px rgba(0, 0, 0, 0.4);
     --shadow-intense: 0 20px 60px -15px;
-    
-    --rarity-common: 107 114 128;
-    --rarity-uncommon: 34 197 94;
-    --rarity-rare: 59 130 246;
-    --rarity-epic: 168 85 247;
-    --rarity-legendary: 234 179 8;
+
+    /* Rarity colors */
+    --rarity-common: 220 10% 55%;
+    --rarity-uncommon: 145 65% 45%;
+    --rarity-rare: 200 95% 55%;
+    --rarity-epic: 280 85% 60%;
+    --rarity-legendary: 45 93% 58%;
   }
 }
 
@@ -72,21 +81,47 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  /* Custom font for game UI */
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-bold tracking-tight;
   }
 }
 
 @layer utilities {
+  /* Glass morphism effect */
+  .glass {
+    background: linear-gradient(145deg, hsl(220 15% 14% / 0.8) 0%, hsl(220 15% 10% / 0.6) 100%);
+    backdrop-filter: blur(12px);
+    border: 1px solid hsl(220 13% 22% / 0.5);
+  }
+
+  .glass-card {
+    @apply glass rounded-xl shadow-lg;
+  }
+
+  /* Animations */
   .animate-float {
     animation: float 3s ease-in-out infinite;
   }
-  
-  .animate-attack-slash {
-    animation: attackSlash 0.6s ease-out;
+
+  .animate-pulse-slow {
+    animation: pulse-slow 3s ease-in-out infinite;
   }
-  
+
+  .animate-slide-up {
+    animation: slide-up 0.5s ease-out;
+  }
+
+  .animate-attack-slash {
+    animation: attackSlash 0.5s ease-out;
+  }
+
   .animate-hit-flash {
-    animation: hitFlash 0.6s ease-out;
+    animation: hitFlash 0.4s ease-out;
   }
 
   .animate-glow-pulse {
@@ -97,94 +132,107 @@ All colors MUST be HSL.
     animation: screenShake 0.3s ease-in-out;
   }
 
-  .animate-attack-effect {
-    animation: attackEffect 0.6s ease-out forwards;
+  .animate-damage-number {
+    animation: damageNumber 1s ease-out forwards;
   }
 
+  .animate-victory {
+    animation: victory 1s ease-out;
+  }
+
+  /* Scrollbar styling */
   .styled-scrollbar::-webkit-scrollbar {
-    width: 8px;
+    width: 6px;
   }
 
   .styled-scrollbar::-webkit-scrollbar-track {
-    background: hsl(var(--card));
-    border-radius: 4px;
+    background: hsl(var(--muted));
+    border-radius: 3px;
   }
 
   .styled-scrollbar::-webkit-scrollbar-thumb {
-    background: hsl(var(--primary) / 0.3);
-    border-radius: 4px;
+    background: hsl(var(--primary) / 0.4);
+    border-radius: 3px;
     transition: background 0.2s;
   }
 
   .styled-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: hsl(var(--primary) / 0.5);
+    background: hsl(var(--primary) / 0.6);
   }
 
-  /* Firefox scrollbar */
   .styled-scrollbar {
     scrollbar-width: thin;
-    scrollbar-color: hsl(var(--primary) / 0.3) hsl(var(--card));
+    scrollbar-color: hsl(var(--primary) / 0.4) hsl(var(--muted));
   }
-  
+
+  /* Keyframes */
   @keyframes float {
-    0%, 100% {
-      transform: translateY(0px);
-    }
-    50% {
-      transform: translateY(-10px);
-    }
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-8px); }
   }
-  
+
+  @keyframes pulse-slow {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+  }
+
+  @keyframes slide-up {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
   @keyframes attackSlash {
-    0% {
-      transform: scale(1) rotate(0deg);
-    }
-    50% {
-      transform: scale(1.15) rotate(5deg);
-      box-shadow: 0 0 30px hsl(var(--primary));
-    }
-    100% {
-      transform: scale(1) rotate(0deg);
-    }
+    0% { transform: translateX(0) scale(1); }
+    30% { transform: translateX(30px) scale(1.1); }
+    100% { transform: translateX(0) scale(1); }
   }
-  
+
   @keyframes hitFlash {
-    0%, 100% {
-      opacity: 1;
-    }
-    50% {
-      opacity: 0.5;
-      box-shadow: 0 0 40px hsl(var(--destructive));
-    }
+    0%, 100% { filter: brightness(1); }
+    50% { filter: brightness(1.8) saturate(1.5); }
   }
 
   @keyframes glowPulse {
-    0%, 100% {
-      box-shadow: 0 0 20px hsl(var(--primary) / 0.4);
-    }
-    50% {
-      box-shadow: 0 0 40px hsl(var(--primary) / 0.8);
-    }
+    0%, 100% { box-shadow: 0 0 20px hsl(var(--primary) / 0.3); }
+    50% { box-shadow: 0 0 40px hsl(var(--primary) / 0.6); }
   }
 
   @keyframes screenShake {
     0%, 100% { transform: translate(0, 0); }
-    10%, 30%, 50%, 70%, 90% { transform: translate(-4px, 4px); }
-    20%, 40%, 60%, 80% { transform: translate(4px, -4px); }
+    10%, 30%, 50%, 70%, 90% { transform: translate(-3px, 3px); }
+    20%, 40%, 60%, 80% { transform: translate(3px, -3px); }
   }
 
-  @keyframes attackEffect {
-    0% {
-      opacity: 0;
-      transform: scale(0.5) translateX(-20px);
-    }
-    50% {
-      opacity: 1;
-      transform: scale(1.5) translateX(20px);
-    }
-    100% {
-      opacity: 0;
-      transform: scale(0.5) translateX(60px);
-    }
+  @keyframes damageNumber {
+    0% { opacity: 1; transform: translateY(0) scale(1); }
+    50% { opacity: 1; transform: translateY(-20px) scale(1.2); }
+    100% { opacity: 0; transform: translateY(-40px) scale(0.8); }
+  }
+
+  @keyframes victory {
+    0% { transform: scale(0.8); opacity: 0; }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  /* Combat-specific animations */
+  @keyframes moveToEnemy {
+    0% { transform: translateX(0); }
+    50% { transform: translateX(80px); }
+    100% { transform: translateX(0); }
+  }
+
+  @keyframes moveToPlayer {
+    0% { transform: translateX(0); }
+    50% { transform: translateX(-80px); }
+    100% { transform: translateX(0); }
+  }
+
+  .animate-move-to-enemy {
+    animation: moveToEnemy 0.6s ease-in-out;
+  }
+
+  .animate-move-to-player {
+    animation: moveToPlayer 0.6s ease-in-out;
   }
 }
