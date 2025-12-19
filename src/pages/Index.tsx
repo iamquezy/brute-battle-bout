@@ -47,6 +47,8 @@ import { LeaderboardRewards } from '@/components/LeaderboardRewards';
 import { WorldBoss } from '@/components/WorldBoss';
 import { SeasonalEvents } from '@/components/SeasonalEvents';
 import { MythicPlusHub } from '@/components/MythicPlusHub';
+import { PublicGuildView } from '@/components/PublicGuildView';
+import { GameHub } from '@/components/GameHub';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -70,7 +72,7 @@ import warriorAvatar from '@/assets/avatars/warrior.png';
 import mageAvatar from '@/assets/avatars/mage.png';
 import archerAvatar from '@/assets/avatars/archer.png';
 
-type GameState = 'creation' | 'hub' | 'opponent-selection' | 'difficulty-selection' | 'combat' | 'levelup' | 'pvp-hub' | 'pvp-combat' | 'boss-selection' | 'boss-battle' | 'guild-hub' | 'cosmetics' | 'hall-of-fame' | 'training' | 'tournament-hub' | 'world-boss' | 'seasonal-events' | 'mythic-plus';
+type GameState = 'creation' | 'hub' | 'opponent-selection' | 'difficulty-selection' | 'combat' | 'levelup' | 'pvp-hub' | 'pvp-combat' | 'boss-selection' | 'boss-battle' | 'guild-hub' | 'cosmetics' | 'hall-of-fame' | 'training' | 'tournament-hub' | 'world-boss' | 'seasonal-events' | 'mythic-plus' | 'public-guilds';
 
 interface BattleRecord {
   opponent: string;
@@ -1546,190 +1548,46 @@ const Index = () => {
     );
   }
 
-  // Hub
-  if (gameState === 'hub' && player) {
-    const expNeeded = player.level * 100;
-    const expProgress = (player.experience / expNeeded) * 100;
-    const wins = battleHistory.filter(b => b.result === 'victory').length;
-    const losses = battleHistory.filter(b => b.result === 'defeat').length;
-    
-    const getAvatarForClass = (characterClass: string) => {
-      switch (characterClass) {
-        case 'fighter': return warriorAvatar;
-        case 'mage': return mageAvatar;
-        case 'archer': return archerAvatar;
-        default: return warriorAvatar;
-      }
-    };
-
+  if (gameState === 'public-guilds' && player && user) {
     return (
-      <div className="min-h-screen bg-gradient-arena p-4">
-        {/* Header with Arena Button */}
-        <div className="max-w-7xl mx-auto mb-6">
-          <div className="text-center mb-4">
-            <h1 className="text-5xl font-bold bg-gradient-gold bg-clip-text text-transparent mb-2 animate-float">
-              Warrior's Hall
-            </h1>
-            <div className="flex items-center justify-center gap-2 text-2xl font-bold">
-              <Coins className="w-6 h-6 text-primary" />
-              <span className="text-primary">{player.gold}</span>
-              <span className="text-muted-foreground text-lg">gold</span>
-            </div>
-          </div>
-          <div className="flex gap-3 max-w-md mx-auto">
-            <Button
-              onClick={startNewBattle}
-              className="flex-1 h-16 text-xl font-bold bg-gradient-gold text-primary-foreground hover:opacity-90 transition-all hover:scale-105 shadow-combat"
-            >
-              <Swords className="w-6 h-6 mr-2" />
-              Enter Arena
-            </Button>
-            <Button
-              onClick={() => setShopOpen(true)}
-              className="h-16 px-6 text-xl font-bold bg-primary/20 border-2 border-primary hover:bg-primary/30 transition-all hover:scale-105"
-            >
-              <Store className="w-6 h-6" />
-            </Button>
-          </div>
-          
-          {/* Quick Access Buttons */}
-          <div className="flex gap-2 max-w-2xl mx-auto mt-4 flex-wrap justify-center">
-            <Button variant="outline" size="sm" onClick={() => setQuestsOpen(true)}>
-              <Target className="w-4 h-4 mr-1" />
-              Quests
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => setAchievementsOpen(true)}>
-              <Award className="w-4 h-4 mr-1" />
-              Achievements
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => setPetsOpen(true)}>
-              <Sparkles className="w-4 h-4 mr-1" />
-              Pets ({collectedPets.length})
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => setCraftingOpen(true)}>
-              <Hammer className="w-4 h-4 mr-1" />
-              Crafting
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => setSkillTreeOpen(true)}>
-              <Zap className="w-4 w-4 mr-1" />
-              Skills ({skillPoints} SP)
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => setSpecializationModalOpen(true)}>
-              <Sparkles className="w-4 h-4 mr-1" />
-              Specialization
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => setBuildManagerOpen(true)}>
-              <Save className="w-4 h-4 mr-1" />
-              Builds
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => setGameState('training')}
-            >
-              <Target className="w-4 h-4 mr-1" />
-              Training
-            </Button>
-            <Button
-              variant="outline" 
-              size="sm" 
-              onClick={openPvPHub}
-              disabled={!user}
-              title={!user ? 'Loading...' : undefined}
-            >
-              <Trophy className="w-4 h-4 mr-1" />
-              PvP Arena
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={openBossSelection}
-              disabled={!user}
-              title={!user ? 'Loading...' : undefined}
-            >
-              <Skull className="w-4 h-4 mr-1" />
-              Raid Bosses
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={openGuildHub}
-              disabled={!user}
-              title={!user ? 'Loading...' : undefined}
-            >
-              <Users className="w-4 h-4 mr-1" />
-              Guild
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={openCosmetics}
-              disabled={!user}
-              title={!user ? 'Loading...' : undefined}
-            >
-              <Sparkles className="w-4 h-4 mr-1" />
-              Cosmetics
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={openHallOfFame}
-              disabled={!user}
-              title={!user ? 'Loading...' : undefined}
-            >
-              <Trophy className="w-4 h-4 mr-1" />
-              Hall of Fame
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => setPrestigeModalOpen(true)}
-              disabled={!user}
-              title={!user ? 'Loading...' : undefined}
-            >
-              <Sparkles className="w-4 h-4 mr-1 text-yellow-500" />
-              Prestige
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => setLeaderboardRewardsOpen(true)}
-              disabled={!user}
-            >
-              <Trophy className="w-4 h-4 mr-1" />
-              Rewards
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => setGameState('world-boss')}
-              disabled={!user}
-            >
-              <Skull className="w-4 h-4 mr-1" />
-              World Boss
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => setGameState('seasonal-events')}
-              disabled={!user}
-            >
-              <Sparkles className="w-4 h-4 mr-1" />
-              Events
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => setGameState('mythic-plus')}
-              disabled={!user}
-            >
-              <Zap className="w-4 h-4 mr-1" />
-              Mythic+
-            </Button>
-          </div>
-        </div>
+      <PublicGuildView 
+        userId={user.id}
+        onBack={() => setGameState('hub')}
+        onChallengePvP={(opponentId, opponentName) => {
+          setPvpOpponentId(opponentId);
+          setPvpOpponentName(opponentName);
+          setGameState('pvp-combat');
+        }}
+      />
+    );
+  }
+
+  // Hub - Clean, minimal design with 4 main actions
+  if (gameState === 'hub' && player) {
+    return (
+      <>
+        <GameHub
+          player={player}
+          equippedItems={equippedItems}
+          battleHistory={battleHistory}
+          winStreak={winStreak}
+          skillPoints={skillPoints}
+          onStartBattle={startNewBattle}
+          onOpenPvP={openPvPHub}
+          onOpenGuild={() => setGameState('public-guilds')}
+          onOpenInventory={() => {
+            // Show inventory inline - handled by modals below
+            toast.info('Opening inventory...');
+          }}
+          onOpenSkills={() => setSkillTreeOpen(true)}
+          onOpenShop={() => setShopOpen(true)}
+          onOpenQuests={() => setQuestsOpen(true)}
+          onOpenBosses={() => setGameState('world-boss')}
+          onOpenSettings={() => {}}
+          onSignOut={signOut}
+        />
         
-        {/* Shop Modal */}
+        {/* All Modals */}
         <Shop 
           open={shopOpen} 
           onClose={() => setShopOpen(false)}
@@ -1737,7 +1595,6 @@ const Index = () => {
           onPurchase={handlePurchase}
         />
         
-        {/* Phase 2 Modals */}
         <Quests
           open={questsOpen}
           onClose={() => setQuestsOpen(false)}
@@ -1785,7 +1642,6 @@ const Index = () => {
           onUnlockNode={handleUnlockSkillNode}
         />
         
-        {/* Phase 3 Modals */}
         <EquipmentEnhancement
           open={enhancementModalOpen}
           onClose={() => setEnhancementModalOpen(false)}
@@ -1795,345 +1651,52 @@ const Index = () => {
           onEnhance={handleEnhanceEquipment}
         />
         
-        {player && (
+        <SpecializationModal
+          open={specializationModalOpen}
+          onClose={() => setSpecializationModalOpen(false)}
+          characterClass={player.class}
+          currentLevel={player.level}
+          currentSpecialization={characterSpecialization}
+          onSelectSpecialization={handleSelectSpecialization}
+        />
+        
+        {user && (
           <>
-            <SpecializationModal
-              open={specializationModalOpen}
-              onClose={() => setSpecializationModalOpen(false)}
-              characterClass={player.class}
-              currentLevel={player.level}
+            <BuildManager
+              open={buildManagerOpen}
+              onClose={() => setBuildManagerOpen(false)}
+              currentCharacter={player}
+              currentEquipment={equippedItems}
+              currentSkills={acquiredSkills}
               currentSpecialization={characterSpecialization}
-              onSelectSpecialization={handleSelectSpecialization}
+              userId={user.id}
+              onLoadBuild={handleLoadBuild}
             />
             
-            {user && (
-              <BuildManager
-                open={buildManagerOpen}
-                onClose={() => setBuildManagerOpen(false)}
-                currentCharacter={player}
-                currentEquipment={equippedItems}
-                currentSkills={acquiredSkills}
-                currentSpecialization={characterSpecialization}
-                userId={user.id}
-                onLoadBuild={handleLoadBuild}
-              />
-            )}
+            <LeaderboardRewards
+              open={leaderboardRewardsOpen}
+              onClose={() => setLeaderboardRewardsOpen(false)}
+              userId={user.id}
+              onClaimReward={handleClaimLeaderboardReward}
+            />
+
+            <PrestigeModal
+              open={prestigeModalOpen}
+              onClose={() => setPrestigeModalOpen(false)}
+              player={player}
+              userId={user.id}
+              onPrestige={handlePrestigeComplete}
+            />
           </>
         )}
 
-        {user && (
-          <LeaderboardRewards
-            open={leaderboardRewardsOpen}
-            onClose={() => setLeaderboardRewardsOpen(false)}
-            userId={user.id}
-            onClaimReward={handleClaimLeaderboardReward}
-          />
-        )}
-
-        {user && (
-          <PrestigeModal
-            open={prestigeModalOpen}
-            onClose={() => setPrestigeModalOpen(false)}
-            player={player}
-            userId={user.id}
-            onPrestige={handlePrestigeComplete}
-          />
-        )}
-
-        {/* Achievement Notification */}
         <AchievementNotification
           show={achievementNotification.show}
           title={achievementNotification.title}
           description={achievementNotification.description}
           onComplete={() => setAchievementNotification({ show: false, title: '', description: '' })}
         />
-
-        {/* Main Layout: 3 columns */}
-        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left: Win Streak, Challenges, Battle History */}
-          <div className="space-y-4">
-            <WinStreakDisplay 
-              currentStreak={winStreak}
-              bestStreak={bestStreak}
-            />
-            
-            <HourlyChallenges 
-              challenges={hourlyChallenges}
-              onClaim={handleClaimHourlyChallenge}
-            />
-            
-            <Card className="p-6 bg-card/95 backdrop-blur-sm border-2 border-primary/30 shadow-combat">
-              <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-                <Trophy className="w-6 h-6 text-primary" />
-                Battle History
-              </h2>
-            <div className="space-y-2 mb-4">
-              <div className="flex justify-between text-lg font-bold">
-                <span className="text-green-400">Victories: {wins}</span>
-                <span className="text-red-400">Defeats: {losses}</span>
-              </div>
-              <div className="text-sm text-muted-foreground text-center">
-                Win Rate: {battleHistory.length > 0 ? Math.round((wins / battleHistory.length) * 100) : 0}%
-              </div>
-            </div>
-            <div className="space-y-2 max-h-[400px] overflow-y-auto styled-scrollbar">
-              {battleHistory.length === 0 ? (
-                <p className="text-muted-foreground text-center py-4">No battles yet</p>
-              ) : (
-                battleHistory.map((battle, idx) => (
-                  <div
-                    key={idx}
-                    className={`p-3 rounded border-2 ${
-                      battle.result === 'victory'
-                        ? 'bg-green-500/10 border-green-500/30'
-                        : 'bg-red-500/10 border-red-500/30'
-                    }`}
-                  >
-                    <div className="flex justify-between items-center">
-                      <span className="font-bold text-sm">{battle.opponent}</span>
-                      <span className={`text-xs font-bold uppercase ${
-                        battle.result === 'victory' ? 'text-green-400' : 'text-red-400'
-                      }`}>
-                        {battle.result}
-                      </span>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-            </Card>
-          </div>
-
-          {/* Center: Character Stats */}
-          <Card className="p-6 bg-card/95 backdrop-blur-sm border-2 border-primary/30 shadow-combat">
-            <div className="text-center mb-6">
-              <div className="relative w-32 h-32 mx-auto mb-4">
-                <img 
-                  src={getAvatarForClass(player.class)} 
-                  alt={`${player.class} avatar`}
-                  className="w-full h-full object-cover rounded-full border-4 border-primary shadow-glow animate-glow-pulse"
-                />
-              </div>
-              <h2 className="text-3xl font-bold mb-2">
-                {currentTitle && TITLES[currentTitle] && (
-                  <span 
-                    className="block text-sm mb-1"
-                    style={{ color: TITLES[currentTitle].color }}
-                  >
-                    {TITLES[currentTitle].name}
-                  </span>
-                )}
-                {player.name}
-                {activePet && (
-                  <span className="text-4xl ml-2">{activePet.emoji}</span>
-                )}
-              </h2>
-              <div className="inline-block px-4 py-2 rounded-full bg-gradient-gold text-primary-foreground font-bold text-lg">
-                Level {player.level}
-              </div>
-              <div className="mt-2 text-sm text-muted-foreground capitalize">
-                {player.class} Warrior
-              </div>
-            </div>
-
-            {/* Experience Bar */}
-            <div className="mb-6">
-              <div className="flex justify-between text-sm mb-2">
-                <span>Experience</span>
-                <span className="font-bold">{player.experience} / {expNeeded}</span>
-              </div>
-              <div className="h-4 bg-muted rounded-full overflow-hidden border-2 border-primary/30">
-                <div 
-                  className="h-full bg-gradient-gold transition-all duration-500"
-                  style={{ width: `${expProgress}%` }}
-                />
-              </div>
-            </div>
-
-            {/* Stats Grid */}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="text-center p-3 bg-secondary/50 rounded-lg border border-border">
-                <p className="text-xs text-muted-foreground mb-1">Health</p>
-                <p className="text-lg font-bold">{player.stats.health}/{player.stats.maxHealth}</p>
-              </div>
-              <div className="text-center p-3 bg-secondary/50 rounded-lg border border-border">
-                <p className="text-xs text-muted-foreground mb-1">Attack</p>
-                <p className="text-lg font-bold">{player.stats.attack}</p>
-              </div>
-              <div className="text-center p-3 bg-secondary/50 rounded-lg border border-border">
-                <p className="text-xs text-muted-foreground mb-1">Defense</p>
-                <p className="text-lg font-bold">{player.stats.defense}</p>
-              </div>
-              <div className="text-center p-3 bg-secondary/50 rounded-lg border border-border">
-                <p className="text-xs text-muted-foreground mb-1">Speed</p>
-                <p className="text-lg font-bold">{player.stats.speed}</p>
-              </div>
-              <div className="text-center p-3 bg-secondary/50 rounded-lg border border-border">
-                <p className="text-xs text-muted-foreground mb-1">Evasion</p>
-                <p className="text-lg font-bold">{player.stats.evasion}%</p>
-              </div>
-              <div className="text-center p-3 bg-secondary/50 rounded-lg border border-border">
-                <p className="text-xs text-muted-foreground mb-1">Crit</p>
-                <p className="text-lg font-bold">{player.stats.critChance}%</p>
-              </div>
-              <div className="text-center p-3 bg-secondary/50 rounded-lg border border-border">
-                <p className="text-xs text-muted-foreground mb-1">Luck</p>
-                <p className="text-lg font-bold">{player.stats.luck}</p>
-              </div>
-            </div>
-
-            {/* Reset Progress Button */}
-            <div className="mt-6">
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button 
-                    variant="destructive" 
-                    size="sm" 
-                    className="w-full"
-                  >
-                    <RotateCcw className="w-4 h-4 mr-2" />
-                    Reset Progress
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Reset All Progress?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      This will permanently delete your character, inventory, and all progress. This action cannot be undone.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleResetProgress}>
-                      Reset Everything
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </div>
-          </Card>
-
-          {/* Right: Equipment & Skills */}
-          <div className="space-y-6">
-            <SessionProgress 
-              stats={sessionStats}
-              onClaimReward={handleClaimSessionReward}
-              claimedTiers={sessionRewardsClaimed}
-            />
-            
-            <Card className="p-4 bg-card/95 backdrop-blur-sm border-2 border-primary/30 shadow-combat">
-              <h2 className="text-xl font-bold mb-3 flex items-center gap-2">
-                <Backpack className="w-5 h-5 text-primary" />
-                Equipment
-              </h2>
-              
-              {/* Equipped Items */}
-              <div className="mb-4">
-                <h3 className="text-sm font-bold mb-2">Equipped</h3>
-                <div className="space-y-1.5">
-                  {(['weapon', 'armor', 'accessory'] as const).map((slot) => {
-                    const item = equippedItems[slot];
-                    return (
-                      <div key={slot} className="p-2 bg-secondary/50 rounded border border-border">
-                        <div className="text-xs text-muted-foreground capitalize mb-0.5">{slot}</div>
-                        {item ? (
-                          <div>
-                            <p className={`text-xs font-bold ${
-                              item.rarity === 'legendary' ? 'text-[hsl(var(--rarity-legendary))]' :
-                              item.rarity === 'epic' ? 'text-[hsl(var(--rarity-epic))]' :
-                              item.rarity === 'rare' ? 'text-[hsl(var(--rarity-rare))]' :
-                              item.rarity === 'uncommon' ? 'text-[hsl(var(--rarity-uncommon))]' :
-                              'text-[hsl(var(--rarity-common))]'
-                            }`}>
-                              {item.name}
-                            </p>
-                          </div>
-                        ) : (
-                          <p className="text-xs text-muted-foreground">Empty</p>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Inventory Items */}
-              <div>
-                <h3 className="text-sm font-bold mb-2">Inventory ({inventory.length})</h3>
-                <TooltipProvider>
-                  <div className="space-y-1.5 max-h-[150px] overflow-y-auto styled-scrollbar">
-                    {inventory.length === 0 ? (
-                      <p className="text-muted-foreground text-center py-2 text-xs">
-                        Defeat enemies to find loot!
-                      </p>
-                    ) : (
-                      inventory.slice(0, 3).map((item) => (
-                        <Tooltip key={item.id}>
-                          <TooltipTrigger asChild>
-                            <div
-                              className={`p-1.5 rounded border-2 cursor-pointer hover:scale-105 transition-transform ${
-                                item.rarity === 'legendary' ? 'border-[hsl(var(--rarity-legendary))]' :
-                                item.rarity === 'epic' ? 'border-[hsl(var(--rarity-epic))]' :
-                                item.rarity === 'rare' ? 'border-[hsl(var(--rarity-rare))]' :
-                                item.rarity === 'uncommon' ? 'border-[hsl(var(--rarity-uncommon))]' :
-                                'border-[hsl(var(--rarity-common))]'
-                              }`}
-                              onClick={() => handleEquip(item)}
-                            >
-                              <p className="text-xs font-bold">{item.name}</p>
-                              <p className="text-xs text-muted-foreground capitalize">{item.type}</p>
-                            </div>
-                          </TooltipTrigger>
-                          <TooltipContent side="left" className="bg-card border-2 border-primary/30 p-3">
-                            <div className="space-y-1">
-                              <p className={`font-bold text-sm ${
-                                item.rarity === 'legendary' ? 'text-[hsl(var(--rarity-legendary))]' :
-                                item.rarity === 'epic' ? 'text-[hsl(var(--rarity-epic))]' :
-                                item.rarity === 'rare' ? 'text-[hsl(var(--rarity-rare))]' :
-                                item.rarity === 'uncommon' ? 'text-[hsl(var(--rarity-uncommon))]' :
-                                'text-[hsl(var(--rarity-common))]'
-                              }`}>
-                                {item.name}
-                              </p>
-                              <p className="text-xs text-muted-foreground capitalize">{item.rarity} {item.type}</p>
-                              <div className="pt-2 space-y-0.5 border-t border-border">
-                                {item.stats.attack > 0 && <p className="text-xs text-green-400">+{item.stats.attack} Attack</p>}
-                                {item.stats.defense > 0 && <p className="text-xs text-green-400">+{item.stats.defense} Defense</p>}
-                                {item.stats.speed > 0 && <p className="text-xs text-green-400">+{item.stats.speed} Speed</p>}
-                                {item.stats.health > 0 && <p className="text-xs text-green-400">+{item.stats.health} Health</p>}
-                                {item.stats.evasion > 0 && <p className="text-xs text-green-400">+{item.stats.evasion}% Evasion</p>}
-                                {item.stats.critChance > 0 && <p className="text-xs text-green-400">+{item.stats.critChance}% Crit</p>}
-                                {item.stats.luck > 0 && <p className="text-xs text-green-400">+{item.stats.luck} Luck</p>}
-                              </div>
-                            </div>
-                          </TooltipContent>
-                        </Tooltip>
-                      ))
-                    )}
-                  </div>
-                </TooltipProvider>
-                {inventory.length > 3 && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      // Open full inventory modal
-                      const modal = document.createElement('div');
-                      document.body.appendChild(modal);
-                    }}
-                    className="w-full mt-2 text-xs h-7"
-                  >
-                    View All ({inventory.length})
-                  </Button>
-                )}
-              </div>
-            </Card>
-
-            {/* Skills */}
-            <Skills acquiredSkills={acquiredSkills} />
-          </div>
-        </div>
-      </div>
+      </>
     );
   }
 
