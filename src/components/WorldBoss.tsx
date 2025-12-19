@@ -156,8 +156,9 @@ export function WorldBoss({ userId, player, onBack }: WorldBossProps) {
       if (!boss) throw new Error('Boss not found');
 
       // Calculate damage (player attack + critical hit chance)
-      const baseDamage = player.attack * (1 + Math.random() * 0.5);
-      const isCrit = Math.random() < (player.critChance || 0.1);
+      const playerAttack = player.stats?.attack || player.attack || 50;
+      const baseDamage = playerAttack * (1 + Math.random() * 0.5);
+      const isCrit = Math.random() < (player.stats?.critChance || player.critChance || 0.1);
       const damage = Math.floor(baseDamage * (isCrit ? 2 : 1));
 
       const newHealth = Math.max(0, activeBoss.current_health - damage);
