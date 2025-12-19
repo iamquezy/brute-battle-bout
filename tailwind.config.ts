@@ -31,6 +31,10 @@ export default {
           DEFAULT: "hsl(var(--destructive))",
           foreground: "hsl(var(--destructive-foreground))",
         },
+        success: {
+          DEFAULT: "hsl(var(--success))",
+          foreground: "hsl(var(--success-foreground))",
+        },
         muted: {
           DEFAULT: "hsl(var(--muted))",
           foreground: "hsl(var(--muted-foreground))",
@@ -63,6 +67,13 @@ export default {
           bg: "hsl(var(--arena-bg))",
           accent: "hsl(var(--arena-accent))",
         },
+        rarity: {
+          common: "hsl(var(--rarity-common))",
+          uncommon: "hsl(var(--rarity-uncommon))",
+          rare: "hsl(var(--rarity-rare))",
+          epic: "hsl(var(--rarity-epic))",
+          legendary: "hsl(var(--rarity-legendary))",
+        },
       },
       backgroundImage: {
         'gradient-arena': 'var(--gradient-arena)',
@@ -70,10 +81,12 @@ export default {
         'gradient-fighter': 'var(--gradient-fighter)',
         'gradient-mage': 'var(--gradient-mage)',
         'gradient-archer': 'var(--gradient-archer)',
+        'gradient-glass': 'var(--gradient-glass)',
       },
       boxShadow: {
         'glow': 'var(--shadow-glow)',
         'combat': 'var(--shadow-combat)',
+        'card': 'var(--shadow-card)',
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -89,58 +102,15 @@ export default {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
         },
-        "attack-slash": {
-          "0%": { transform: "translateX(0) scale(1)", opacity: "0" },
-          "50%": { transform: "translateX(20px) scale(1.2)", opacity: "1" },
-          "100%": { transform: "translateX(40px) scale(0.8)", opacity: "0" },
-        },
-        "hit-flash": {
-          "0%, 100%": { opacity: "1" },
-          "50%": { opacity: "0.3" },
-        },
-        "level-up": {
-          "0%": { transform: "scale(0.8) translateY(20px)", opacity: "0" },
-          "50%": { transform: "scale(1.1)", opacity: "1" },
-          "100%": { transform: "scale(1) translateY(0)", opacity: "1" },
-        },
-        "float": {
-          "0%, 100%": { transform: "translateY(0px)" },
-          "50%": { transform: "translateY(-10px)" },
-        },
-        "glow-pulse": {
-          "0%, 100%": { filter: "brightness(1) drop-shadow(0 0 10px currentColor)" },
-          "50%": { filter: "brightness(1.3) drop-shadow(0 0 20px currentColor)" },
-        },
-        "screen-shake": {
-          "0%, 100%": { transform: "translate(0, 0)" },
-          "10%, 30%, 50%, 70%, 90%": { transform: "translate(-4px, 4px)" },
-          "20%, 40%, 60%, 80%": { transform: "translate(4px, -4px)" },
-        },
-        "attack-effect": {
-          "0%": {
-            opacity: "0",
-            transform: "scale(0.5) translateX(-20px)",
-          },
-          "50%": {
-            opacity: "1",
-            transform: "scale(1.5) translateX(20px)",
-          },
-          "100%": {
-            opacity: "0",
-            transform: "scale(0.5) translateX(60px)",
-          },
+        "slide-in": {
+          from: { opacity: "0", transform: "translateY(10px)" },
+          to: { opacity: "1", transform: "translateY(0)" },
         },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
-        "attack-slash": "attack-slash 0.6s ease-out",
-        "hit-flash": "hit-flash 0.3s ease-in-out",
-        "level-up": "level-up 0.5s ease-out",
-        "float": "float 3s ease-in-out infinite",
-        "glow-pulse": "glow-pulse 2s ease-in-out infinite",
-        "screen-shake": "screen-shake 0.3s ease-in-out",
-        "attack-effect": "attack-effect 0.6s ease-out",
+        "slide-in": "slide-in 0.3s ease-out",
       },
     },
   },

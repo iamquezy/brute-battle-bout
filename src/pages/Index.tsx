@@ -14,7 +14,7 @@ import { DifficultyTier, DIFFICULTY_TIERS } from '@/lib/gameLogic';
 import { DifficultySelector } from '@/components/DifficultySelector';
 import { CharacterCreation } from '@/components/CharacterCreation';
 import { OpponentSelection } from '@/components/OpponentSelection';
-import { CombatArena } from '@/components/CombatArena';
+import { AutoCombat } from '@/components/AutoCombat';
 import { PvPHub } from '@/components/PvPHub';
 import { PvPCombat } from '@/components/PvPCombat';
 import { LevelUpModal } from '@/components/LevelUpModal';
@@ -1435,7 +1435,7 @@ const Index = () => {
   }
 
   if (gameState === 'combat' && player) {
-    return <CombatArena player={player} opponentId={selectedOpponentId} difficulty={selectedDifficulty} onCombatEnd={handleCombatEnd} />;
+    return <AutoCombat player={player} opponentId={selectedOpponentId} difficulty={selectedDifficulty} onCombatEnd={handleCombatEnd} />;
   }
 
   if (gameState === 'pvp-hub' && player && user) {
