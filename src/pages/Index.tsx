@@ -113,7 +113,8 @@ const Index = () => {
   const [achievementStats, setAchievementStats] = useState<AchievementStats>({
     totalWins: 0, totalLosses: 0, totalDamageDealt: 0, criticalHits: 0,
     attacksEvaded: 0, itemsFound: 0, legendaryItemsOwned: 0, skillsAcquired: 0,
-    goldEarned: 0, lowHealthWins: 0
+    goldEarned: 0, lowHealthWins: 0, dungeonsCompleted: 0, dungeonFloorsCleared: 0,
+    bossesKilled: 0, itemsSold: 0, itemsBought: 0, tradesCompleted: 0, goldFromSales: 0
   });
   const [currentTitle, setCurrentTitle] = useState<string | null>(null);
   const [achievementsOpen, setAchievementsOpen] = useState(false);

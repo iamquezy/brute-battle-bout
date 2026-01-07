@@ -1,4 +1,4 @@
-export type AchievementCategory = 'combat' | 'progression' | 'collection' | 'mastery';
+export type AchievementCategory = 'combat' | 'progression' | 'collection' | 'mastery' | 'dungeon' | 'trading';
 
 export type AchievementTier = 'bronze' | 'silver' | 'gold' | 'platinum';
 
@@ -31,5 +31,12 @@ export interface AchievementStats {
   legendaryItemsOwned: number;
   skillsAcquired: number;
   goldEarned: number;
-  lowHealthWins: number; // wins with <10% health
+  lowHealthWins: number;
+  dungeonsCompleted: number;
+  dungeonFloorsCleared: number;
+  bossesKilled: number;
+  itemsSold: number;
+  itemsBought: number;
+  tradesCompleted: number;
+  goldFromSales: number;
 }
