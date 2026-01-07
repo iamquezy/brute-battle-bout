@@ -191,6 +191,60 @@ export type Database = {
           },
         ]
       }
+      dungeon_runs: {
+        Row: {
+          combat_log: Json
+          completed_at: string | null
+          current_floor: number
+          dungeon_id: string
+          id: string
+          max_floor_reached: number
+          rewards: Json
+          started_at: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          combat_log?: Json
+          completed_at?: string | null
+          current_floor?: number
+          dungeon_id: string
+          id?: string
+          max_floor_reached?: number
+          rewards?: Json
+          started_at?: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          combat_log?: Json
+          completed_at?: string | null
+          current_floor?: number
+          dungeon_id?: string
+          id?: string
+          max_floor_reached?: number
+          rewards?: Json
+          started_at?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dungeon_runs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dungeon_runs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_player_preview"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       friend_requests: {
         Row: {
           created_at: string
@@ -715,6 +769,68 @@ export type Database = {
         }
         Relationships: []
       }
+      marketplace_listings: {
+        Row: {
+          buyer_id: string | null
+          created_at: string
+          id: string
+          item_data: Json
+          price: number
+          seller_id: string
+          sold_at: string | null
+          status: string
+        }
+        Insert: {
+          buyer_id?: string | null
+          created_at?: string
+          id?: string
+          item_data: Json
+          price: number
+          seller_id: string
+          sold_at?: string | null
+          status?: string
+        }
+        Update: {
+          buyer_id?: string | null
+          created_at?: string
+          id?: string
+          item_data?: Json
+          price?: number
+          seller_id?: string
+          sold_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketplace_listings_buyer_id_fkey"
+            columns: ["buyer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketplace_listings_buyer_id_fkey"
+            columns: ["buyer_id"]
+            isOneToOne: false
+            referencedRelation: "public_player_preview"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketplace_listings_seller_id_fkey"
+            columns: ["seller_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketplace_listings_seller_id_fkey"
+            columns: ["seller_id"]
+            isOneToOne: false
+            referencedRelation: "public_player_preview"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       mythic_plus_runs: {
         Row: {
           completed_at: string
@@ -1201,6 +1317,77 @@ export type Database = {
           tier?: string
         }
         Relationships: []
+      }
+      trade_requests: {
+        Row: {
+          created_at: string
+          id: string
+          message: string | null
+          receiver_gold: number
+          receiver_id: string
+          receiver_items: Json
+          sender_gold: number
+          sender_id: string
+          sender_items: Json
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message?: string | null
+          receiver_gold?: number
+          receiver_id: string
+          receiver_items?: Json
+          sender_gold?: number
+          sender_id: string
+          sender_items?: Json
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string | null
+          receiver_gold?: number
+          receiver_id?: string
+          receiver_items?: Json
+          sender_gold?: number
+          sender_id?: string
+          sender_items?: Json
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trade_requests_receiver_id_fkey"
+            columns: ["receiver_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trade_requests_receiver_id_fkey"
+            columns: ["receiver_id"]
+            isOneToOne: false
+            referencedRelation: "public_player_preview"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trade_requests_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trade_requests_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "public_player_preview"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {

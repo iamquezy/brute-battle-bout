@@ -1,1 +1,4 @@
 project_id = "luurdjowfqynxavdxllp"
+
+[functions.spawn-world-boss]
+verify_jwt = false

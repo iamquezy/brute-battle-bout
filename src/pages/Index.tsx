@@ -49,6 +49,8 @@ import { SeasonalEvents } from '@/components/SeasonalEvents';
 import { MythicPlusHub } from '@/components/MythicPlusHub';
 import { PublicGuildView } from '@/components/PublicGuildView';
 import { GameHub } from '@/components/GameHub';
+import { TradingHub } from '@/components/TradingHub';
+import { DungeonRun } from '@/components/DungeonRun';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -72,7 +74,7 @@ import warriorAvatar from '@/assets/avatars/warrior.png';
 import mageAvatar from '@/assets/avatars/mage.png';
 import archerAvatar from '@/assets/avatars/archer.png';
 
-type GameState = 'creation' | 'hub' | 'opponent-selection' | 'difficulty-selection' | 'combat' | 'levelup' | 'pvp-hub' | 'pvp-combat' | 'boss-selection' | 'boss-battle' | 'guild-hub' | 'cosmetics' | 'hall-of-fame' | 'training' | 'tournament-hub' | 'world-boss' | 'seasonal-events' | 'mythic-plus' | 'public-guilds';
+type GameState = 'creation' | 'hub' | 'opponent-selection' | 'difficulty-selection' | 'combat' | 'levelup' | 'pvp-hub' | 'pvp-combat' | 'boss-selection' | 'boss-battle' | 'guild-hub' | 'cosmetics' | 'hall-of-fame' | 'training' | 'tournament-hub' | 'world-boss' | 'seasonal-events' | 'mythic-plus' | 'public-guilds' | 'trading' | 'dungeon';
 
 interface BattleRecord {
   opponent: string;
@@ -1557,6 +1559,38 @@ const Index = () => {
           setPvpOpponentId(opponentId);
           setPvpOpponentName(opponentName);
           setGameState('pvp-combat');
+        }}
+      />
+    );
+  }
+
+  if (gameState === 'trading' && player && user) {
+    return (
+      <TradingHub
+        userId={user.id}
+        player={player}
+        inventory={inventory}
+        gold={player.gold}
+        onBack={() => setGameState('hub')}
+        onGoldChange={(amount) => setPlayer({ ...player, gold: amount })}
+        onInventoryChange={setInventory}
+      />
+    );
+  }
+
+  if (gameState === 'dungeon' && player && user) {
+    return (
+      <DungeonRun
+        userId={user.id}
+        player={player}
+        onBack={() => setGameState('hub')}
+        onRewardsCollected={(goldReward, xpReward) => {
+          setPlayer({
+            ...player,
+            gold: player.gold + goldReward,
+            experience: player.experience + xpReward,
+          });
+          toast.success(`Collected ${goldReward} gold and ${xpReward} XP!`);
         }}
       />
     );
