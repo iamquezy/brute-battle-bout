@@ -1614,10 +1614,9 @@ const Index = () => {
           onOpenPvP={openPvPHub}
           onOpenGuild={() => setGameState('public-guilds')}
           onOpenBosses={() => setGameState('boss-selection')}
-          onOpenInventory={() => setShopOpen(false) || true ? (() => {
-            // Open inventory modal
+          onOpenInventory={() => {
             toast.info('Opening inventory...');
-          })() : undefined}
+          }}
           onOpenSkills={() => setSkillTreeOpen(true)}
           onOpenShop={() => setShopOpen(true)}
           onOpenQuests={() => setQuestsOpen(true)}
