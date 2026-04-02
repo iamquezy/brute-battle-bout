@@ -429,22 +429,28 @@ export function AutoCombat({ player, opponentId, difficulty = 'normal', onCombat
           </Card>
         </div>
 
-        {/* Combat Log */}
+        {/* Combat Log - scrollable with all past actions */}
         <Card className="p-4 bg-card/90 backdrop-blur-sm mb-4">
-          <div className="h-24 overflow-y-auto styled-scrollbar">
-            {currentAction ? (
-              <div className={cn(
-                "p-2 rounded text-center animate-slide-in",
-                currentAction.attacker === 'player' ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'
-              )}>
-                <span className="font-medium">{currentAction.message}</span>
-              </div>
-            ) : (
-              <div className="text-center text-muted-foreground py-4">
-                Combat starting...
-              </div>
-            )}
-          </div>
+          <h3 className="text-sm font-semibold text-muted-foreground mb-2">Combat Log</h3>
+          <ScrollArea className="h-32">
+            <div className="space-y-1">
+              {combatActions.slice(0, currentActionIndex + 1).reverse().map((action, i) => (
+                <div key={i} className={cn(
+                  "px-2 py-1 rounded text-xs",
+                  action.attacker === 'player' 
+                    ? action.isEvaded ? 'bg-muted/30 text-muted-foreground' : 'bg-success/10 text-success'
+                    : action.isEvaded ? 'bg-muted/30 text-muted-foreground' : 'bg-destructive/10 text-destructive'
+                )}>
+                  {action.message}
+                </div>
+              ))}
+              {currentActionIndex < 0 && (
+                <div className="text-center text-muted-foreground py-4 text-xs">
+                  Combat starting...
+                </div>
+              )}
+            </div>
+          </ScrollArea>
           
           {/* Progress indicator */}
           <div className="mt-3">
