@@ -1,13 +1,19 @@
 import { Character } from '@/types/game';
 import { Equipment, EquipmentSlots } from '@/types/equipment';
+import { Pet } from '@/types/pets';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
-  Swords, Users, Trophy, Settings, Backpack, 
+  Swords, Users, Trophy, Backpack, 
   Heart, Shield, Zap, Sword, Crown, Star,
-  Target, Sparkles, LogOut
+  Target, Sparkles, LogOut, ChevronRight,
+  Flame, Skull, Package, Hammer, TreePine,
+  Globe, Store, Award, Settings, Dumbbell,
+  Eye, ArrowRightLeft, Castle, Map
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -18,17 +24,30 @@ import archerAvatar from '@/assets/avatars/archer.png';
 interface GameHubProps {
   player: Character;
   equippedItems: EquipmentSlots;
-  battleHistory: { result: 'victory' | 'defeat' }[];
+  activePet: Pet | null;
+  battleHistory: { result: 'victory' | 'defeat'; opponent?: string }[];
   winStreak: number;
   skillPoints: number;
+  dailyFightsUsed: number;
+  maxDailyFights: number;
   onStartBattle: () => void;
   onOpenPvP: () => void;
   onOpenGuild: () => void;
+  onOpenBosses: () => void;
   onOpenInventory: () => void;
   onOpenSkills: () => void;
   onOpenShop: () => void;
   onOpenQuests: () => void;
-  onOpenBosses: () => void;
+  onOpenAchievements: () => void;
+  onOpenPets: () => void;
+  onOpenCrafting: () => void;
+  onOpenTraining: () => void;
+  onOpenDungeon: () => void;
+  onOpenTrading: () => void;
+  onOpenCosmetics: () => void;
+  onOpenHallOfFame: () => void;
+  onOpenWorldBoss: () => void;
+  onOpenEvents: () => void;
   onOpenSettings: () => void;
   onSignOut: () => void;
 }
@@ -36,17 +55,30 @@ interface GameHubProps {
 export function GameHub({
   player,
   equippedItems,
+  activePet,
   battleHistory,
   winStreak,
   skillPoints,
+  dailyFightsUsed,
+  maxDailyFights,
   onStartBattle,
   onOpenPvP,
   onOpenGuild,
+  onOpenBosses,
   onOpenInventory,
   onOpenSkills,
   onOpenShop,
   onOpenQuests,
-  onOpenBosses,
+  onOpenAchievements,
+  onOpenPets,
+  onOpenCrafting,
+  onOpenTraining,
+  onOpenDungeon,
+  onOpenTrading,
+  onOpenCosmetics,
+  onOpenHallOfFame,
+  onOpenWorldBoss,
+  onOpenEvents,
   onOpenSettings,
   onSignOut,
 }: GameHubProps) {
@@ -54,6 +86,7 @@ export function GameHub({
   const losses = battleHistory.filter(b => b.result === 'defeat').length;
   const expNeeded = player.level * 100;
   const expProgress = (player.experience / expNeeded) * 100;
+  const fightsRemaining = maxDailyFights - dailyFightsUsed;
 
   const getAvatarForClass = (characterClass: string) => {
     switch (characterClass) {
@@ -64,69 +97,54 @@ export function GameHub({
     }
   };
 
-  const getClassGradient = (characterClass: string) => {
+  const getClassAccent = (characterClass: string) => {
     switch (characterClass) {
-      case 'fighter': return 'from-fighter/30 via-fighter/10 to-transparent';
-      case 'mage': return 'from-mage/30 via-mage/10 to-transparent';
-      case 'archer': return 'from-archer/30 via-archer/10 to-transparent';
-      default: return 'from-primary/30 via-primary/10 to-transparent';
+      case 'fighter': return 'border-fighter';
+      case 'mage': return 'border-mage';
+      case 'archer': return 'border-archer';
+      default: return 'border-primary';
     }
   };
 
-  const getClassBorder = (characterClass: string) => {
-    switch (characterClass) {
-      case 'fighter': return 'border-fighter/50';
-      case 'mage': return 'border-mage/50';
-      case 'archer': return 'border-archer/50';
-      default: return 'border-primary/50';
-    }
-  };
+  const recentBattles = battleHistory.slice(0, 5);
 
   return (
     <div className="min-h-screen bg-gradient-arena">
-      {/* Header */}
-      <header className="border-b border-border/50 bg-card/50 backdrop-blur-sm sticky top-0 z-40">
-        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-gradient-gold flex items-center justify-center">
-              <Crown className="w-5 h-5 text-primary-foreground" />
-            </div>
-            <div>
-              <h1 className="font-bold text-lg">Arena Legends</h1>
-              <p className="text-xs text-muted-foreground">Season 1</p>
-            </div>
+      {/* Top Bar */}
+      <header className="border-b border-border/40 bg-card/60 backdrop-blur-md sticky top-0 z-40">
+        <div className="max-w-5xl mx-auto px-4 py-2.5 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Crown className="w-5 h-5 text-primary" />
+            <span className="font-bold text-sm">Arena Legends</span>
           </div>
-          
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20">
-              <Star className="w-4 h-4 text-primary" />
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 border border-primary/20 text-sm">
+              <Star className="w-3.5 h-3.5 text-primary" />
               <span className="font-bold text-primary">{player.gold.toLocaleString()}</span>
             </div>
-            
-            <Button variant="ghost" size="icon" onClick={onOpenSettings}>
-              <Settings className="w-5 h-5" />
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onOpenSettings}>
+              <Settings className="w-4 h-4" />
             </Button>
-            
-            <Button variant="ghost" size="icon" onClick={onSignOut}>
-              <LogOut className="w-5 h-5" />
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onSignOut}>
+              <LogOut className="w-4 h-4" />
             </Button>
           </div>
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto p-4 space-y-6">
-        {/* Character Card - Hero Section */}
-        <Card className={cn(
-          "overflow-hidden bg-gradient-to-r border-2",
-          getClassGradient(player.class),
-          getClassBorder(player.class)
-        )}>
-          <div className="p-6 flex flex-col md:flex-row gap-6">
-            {/* Character Avatar */}
-            <div className="flex-shrink-0">
+      <main className="max-w-5xl mx-auto p-4 space-y-4">
+        {/* Character Card */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Left: Avatar & Identity */}
+          <Card className={cn(
+            "p-5 border-2 bg-card/80 backdrop-blur-sm",
+            getClassAccent(player.class)
+          )}>
+            <div className="flex flex-col items-center text-center gap-3">
               <div className={cn(
-                "w-32 h-32 rounded-2xl overflow-hidden border-4 shadow-lg",
-                getClassBorder(player.class)
+                "w-28 h-28 rounded-xl overflow-hidden border-3 shadow-lg ring-2 ring-offset-2 ring-offset-background",
+                player.class === 'fighter' ? 'ring-fighter' :
+                player.class === 'mage' ? 'ring-mage' : 'ring-archer'
               )}>
                 <img 
                   src={getAvatarForClass(player.class)} 
@@ -134,175 +152,220 @@ export function GameHub({
                   className="w-full h-full object-cover"
                 />
               </div>
-            </div>
-            
-            {/* Character Info */}
-            <div className="flex-1 space-y-4">
               <div>
-                <div className="flex items-center gap-3 mb-1">
-                  <h2 className="text-2xl font-bold">{player.name}</h2>
-                  <Badge variant="outline" className="capitalize">
+                <h2 className="text-xl font-bold">{player.name}</h2>
+                <div className="flex items-center justify-center gap-2 mt-1">
+                  <Badge variant="outline" className="capitalize text-xs">
                     {player.class}
                   </Badge>
-                  <Badge className="bg-primary/20 text-primary border-primary/30">
+                  <Badge className="bg-primary/20 text-primary border-primary/30 text-xs">
                     Lv. {player.level}
                   </Badge>
                 </div>
-                
-                {/* Win/Loss Record */}
-                <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                  <span className="text-success">{wins} Wins</span>
-                  <span className="text-destructive">{losses} Losses</span>
-                  {winStreak > 0 && (
-                    <span className="text-primary flex items-center gap-1">
-                      <Zap className="w-3 h-3" />
-                      {winStreak} Win Streak
-                    </span>
-                  )}
+              </div>
+
+              {/* W/L Record */}
+              <div className="flex items-center gap-3 text-xs">
+                <span className="text-success font-medium">{wins}W</span>
+                <span className="text-muted-foreground">/</span>
+                <span className="text-destructive font-medium">{losses}L</span>
+                {winStreak > 0 && (
+                  <span className="text-primary flex items-center gap-0.5">
+                    <Flame className="w-3 h-3" /> {winStreak}
+                  </span>
+                )}
+              </div>
+
+              {/* XP Bar */}
+              <div className="w-full space-y-1">
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>EXP</span>
+                  <span>{player.experience}/{expNeeded}</span>
                 </div>
+                <Progress value={expProgress} className="h-1.5" />
               </div>
-              
-              {/* Experience Bar */}
-              <div className="space-y-1">
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Experience</span>
-                  <span className="text-foreground">{player.experience} / {expNeeded}</span>
+
+              {/* Active Pet */}
+              {activePet && (
+                <div className="flex items-center gap-2 text-xs bg-secondary/50 rounded-lg px-3 py-1.5 w-full">
+                  <span className="text-lg">{activePet.emoji}</span>
+                  <span className="text-muted-foreground">{activePet.name} Lv.{activePet.level}</span>
                 </div>
-                <Progress value={expProgress} className="h-2" />
-              </div>
-              
-              {/* Stats Grid */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <StatBadge icon={Heart} label="Health" value={player.stats.health} color="text-destructive" />
-                <StatBadge icon={Sword} label="Attack" value={player.stats.attack} color="text-primary" />
-                <StatBadge icon={Shield} label="Defense" value={player.stats.defense} color="text-accent" />
-                <StatBadge icon={Zap} label="Speed" value={player.stats.speed} color="text-success" />
-              </div>
+              )}
             </div>
+          </Card>
+
+          {/* Middle: Stats & Equipment */}
+          <Card className="p-5 bg-card/80 backdrop-blur-sm">
+            <h3 className="text-sm font-semibold text-muted-foreground mb-3 flex items-center gap-2">
+              <Shield className="w-4 h-4" /> Stats
+            </h3>
+            <div className="grid grid-cols-2 gap-2 mb-4">
+              <StatRow icon={Heart} label="HP" value={`${player.stats.health}/${player.stats.maxHealth}`} color="text-destructive" />
+              <StatRow icon={Sword} label="ATK" value={player.stats.attack} color="text-primary" />
+              <StatRow icon={Shield} label="DEF" value={player.stats.defense} color="text-accent" />
+              <StatRow icon={Zap} label="SPD" value={player.stats.speed} color="text-success" />
+              <StatRow icon={Eye} label="EVA" value={`${player.stats.evasion}%`} color="text-muted-foreground" />
+              <StatRow icon={Target} label="CRIT" value={`${player.stats.critChance}%`} color="text-primary" />
+            </div>
+
+            <Separator className="my-3" />
+
+            <h3 className="text-sm font-semibold text-muted-foreground mb-2 flex items-center gap-2">
+              <Backpack className="w-4 h-4" /> Equipment
+            </h3>
+            <div className="space-y-1.5">
+              <EquipSlot label="Weapon" item={equippedItems.weapon} />
+              <EquipSlot label="Armor" item={equippedItems.armor} />
+              <EquipSlot label="Accessory" item={equippedItems.accessory} />
+            </div>
+          </Card>
+
+          {/* Right: Battle & Recent Activity */}
+          <div className="space-y-4">
+            {/* Big Fight Button */}
+            <Card className="p-5 bg-card/80 backdrop-blur-sm space-y-3">
+              <Button 
+                onClick={onStartBattle}
+                disabled={fightsRemaining <= 0}
+                className="w-full h-14 text-lg font-bold bg-gradient-gold text-primary-foreground hover:opacity-90 transition-all hover:scale-[1.02] shadow-lg"
+              >
+                <Swords className="w-5 h-5 mr-2" />
+                Fight!
+              </Button>
+              <p className="text-center text-xs text-muted-foreground">
+                {fightsRemaining} / {maxDailyFights} fights today
+              </p>
+            </Card>
+
+            {/* Recent Battles */}
+            <Card className="p-4 bg-card/80 backdrop-blur-sm">
+              <h3 className="text-sm font-semibold text-muted-foreground mb-2">Recent Battles</h3>
+              {recentBattles.length === 0 ? (
+                <p className="text-xs text-muted-foreground text-center py-3">No battles yet. Fight!</p>
+              ) : (
+                <div className="space-y-1">
+                  {recentBattles.map((b, i) => (
+                    <div key={i} className={cn(
+                      "flex items-center justify-between text-xs px-2 py-1.5 rounded",
+                      b.result === 'victory' ? 'bg-success/10' : 'bg-destructive/10'
+                    )}>
+                      <span className="truncate">{b.opponent || 'Enemy'}</span>
+                      <Badge variant="outline" className={cn(
+                        "text-[10px] px-1.5",
+                        b.result === 'victory' ? 'text-success border-success/30' : 'text-destructive border-destructive/30'
+                      )}>
+                        {b.result === 'victory' ? 'WIN' : 'LOSS'}
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </Card>
           </div>
-        </Card>
-
-        {/* Main Action - Battle Button */}
-        <Button 
-          onClick={onStartBattle}
-          className="w-full h-16 text-xl font-bold bg-gradient-gold text-primary-foreground hover:opacity-90 transition-all hover:scale-[1.02] shadow-lg"
-        >
-          <Swords className="w-6 h-6 mr-3" />
-          Enter Arena
-        </Button>
-
-        {/* Quick Actions Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <ActionCard 
-            icon={Trophy} 
-            label="PvP Arena" 
-            description="Battle players"
-            onClick={onOpenPvP}
-          />
-          <ActionCard 
-            icon={Users} 
-            label="Guild" 
-            description="Join forces"
-            onClick={onOpenGuild}
-          />
-          <ActionCard 
-            icon={Target} 
-            label="Bosses" 
-            description="Raid battles"
-            onClick={onOpenBosses}
-          />
-          <ActionCard 
-            icon={Sparkles} 
-            label="Quests" 
-            description="Earn rewards"
-            onClick={onOpenQuests}
-          />
         </div>
 
-        {/* Secondary Actions */}
-        <div className="grid grid-cols-3 gap-3">
-          <Button 
-            variant="outline" 
-            onClick={onOpenInventory}
-            className="h-12 flex items-center justify-center gap-2"
-          >
-            <Backpack className="w-4 h-4" />
-            Inventory
-          </Button>
-          <Button 
-            variant="outline" 
-            onClick={onOpenSkills}
-            className="h-12 flex items-center justify-center gap-2"
-          >
-            <Zap className="w-4 h-4" />
-            Skills
-            {skillPoints > 0 && (
-              <Badge className="ml-1 bg-primary text-primary-foreground text-xs px-1.5">
-                {skillPoints}
-              </Badge>
-            )}
-          </Button>
-          <Button 
-            variant="outline" 
-            onClick={onOpenShop}
-            className="h-12 flex items-center justify-center gap-2"
-          >
-            <Star className="w-4 h-4" />
-            Shop
-          </Button>
+        {/* Main Actions Grid */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <ActionCard icon={Trophy} label="PvP Arena" desc="Fight players" onClick={onOpenPvP} accent="text-primary" />
+          <ActionCard icon={Users} label="Guild" desc="Join forces" onClick={onOpenGuild} accent="text-accent" />
+          <ActionCard icon={Skull} label="Bosses" desc="Epic battles" onClick={onOpenBosses} accent="text-destructive" />
+          <ActionCard icon={Map} label="Dungeons" desc="Explore & loot" onClick={onOpenDungeon} accent="text-success" />
+        </div>
+
+        {/* Secondary Features */}
+        <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
+          <SmallAction icon={Backpack} label="Inventory" onClick={onOpenInventory} badge={undefined} />
+          <SmallAction icon={Sparkles} label="Skills" onClick={onOpenSkills} badge={skillPoints > 0 ? skillPoints : undefined} />
+          <SmallAction icon={Store} label="Shop" onClick={onOpenShop} badge={undefined} />
+          <SmallAction icon={Target} label="Quests" onClick={onOpenQuests} badge={undefined} />
+          <SmallAction icon={Hammer} label="Crafting" onClick={onOpenCrafting} badge={undefined} />
+          <SmallAction icon={Dumbbell} label="Training" onClick={onOpenTraining} badge={undefined} />
+        </div>
+
+        {/* Tertiary Features */}
+        <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
+          <SmallAction icon={Heart} label="Pets" onClick={onOpenPets} badge={undefined} />
+          <SmallAction icon={Award} label="Achievements" onClick={onOpenAchievements} badge={undefined} />
+          <SmallAction icon={ArrowRightLeft} label="Trading" onClick={onOpenTrading} badge={undefined} />
+          <SmallAction icon={Globe} label="World Boss" onClick={onOpenWorldBoss} badge={undefined} />
+          <SmallAction icon={Flame} label="Events" onClick={onOpenEvents} badge={undefined} />
+          <SmallAction icon={Crown} label="Hall of Fame" onClick={onOpenHallOfFame} badge={undefined} />
         </div>
       </main>
     </div>
   );
 }
 
-function StatBadge({ 
-  icon: Icon, 
-  label, 
-  value, 
-  color 
-}: { 
-  icon: React.ElementType; 
-  label: string; 
-  value: number; 
-  color: string;
-}) {
+function StatRow({ icon: Icon, label, value, color }: { icon: React.ElementType; label: string; value: string | number; color: string }) {
   return (
-    <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-background/50 border border-border/50">
-      <Icon className={cn("w-4 h-4", color)} />
-      <div>
-        <p className="text-xs text-muted-foreground">{label}</p>
-        <p className="font-bold text-sm">{value}</p>
-      </div>
+    <div className="flex items-center gap-2 text-sm">
+      <Icon className={cn("w-3.5 h-3.5", color)} />
+      <span className="text-muted-foreground text-xs">{label}</span>
+      <span className="ml-auto font-bold text-xs">{value}</span>
     </div>
   );
 }
 
-function ActionCard({ 
-  icon: Icon, 
-  label, 
-  description, 
-  onClick 
-}: { 
-  icon: React.ElementType; 
-  label: string; 
-  description: string;
-  onClick: () => void;
+function EquipSlot({ label, item }: { label: string; item: Equipment | null }) {
+  return (
+    <div className="flex items-center gap-2 text-xs px-2 py-1.5 rounded bg-secondary/30">
+      <span className="text-muted-foreground w-16">{label}</span>
+      {item ? (
+        <span className={cn(
+          "font-medium truncate",
+          item.rarity === 'legendary' ? 'text-rarity-legendary' :
+          item.rarity === 'epic' ? 'text-rarity-epic' :
+          item.rarity === 'rare' ? 'text-rarity-rare' :
+          item.rarity === 'uncommon' ? 'text-rarity-uncommon' :
+          'text-rarity-common'
+        )}>
+          {item.name} {item.enhancementLevel ? `+${item.enhancementLevel}` : ''}
+        </span>
+      ) : (
+        <span className="text-muted-foreground/50 italic">Empty</span>
+      )}
+    </div>
+  );
+}
+
+function ActionCard({ icon: Icon, label, desc, onClick, accent }: {
+  icon: React.ElementType; label: string; desc: string; onClick: () => void; accent: string;
 }) {
   return (
     <Card 
-      className="p-4 cursor-pointer hover:bg-secondary/50 transition-colors group"
+      className="p-4 cursor-pointer hover:bg-secondary/50 transition-all hover:scale-[1.02] group border-border/50"
       onClick={onClick}
     >
       <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-          <Icon className="w-5 h-5 text-primary" />
+        <div className="w-10 h-10 rounded-lg bg-secondary/80 flex items-center justify-center group-hover:bg-secondary transition-colors">
+          <Icon className={cn("w-5 h-5", accent)} />
         </div>
-        <div>
-          <p className="font-semibold">{label}</p>
-          <p className="text-xs text-muted-foreground">{description}</p>
+        <div className="min-w-0">
+          <p className="font-semibold text-sm">{label}</p>
+          <p className="text-xs text-muted-foreground">{desc}</p>
         </div>
       </div>
     </Card>
+  );
+}
+
+function SmallAction({ icon: Icon, label, onClick, badge }: {
+  icon: React.ElementType; label: string; onClick: () => void; badge: number | undefined;
+}) {
+  return (
+    <Button 
+      variant="outline" 
+      onClick={onClick}
+      className="h-auto py-3 px-2 flex flex-col items-center gap-1.5 relative text-xs border-border/40 hover:bg-secondary/50"
+    >
+      <Icon className="w-4 h-4 text-muted-foreground" />
+      <span className="text-[11px]">{label}</span>
+      {badge !== undefined && (
+        <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
+          {badge}
+        </span>
+      )}
+    </Button>
   );
 }

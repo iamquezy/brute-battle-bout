@@ -138,7 +138,7 @@ const Index = () => {
   // Phase 2.5: Save System
   const [lastDailyReset, setLastDailyReset] = useState(Date.now());
   const [lastWeeklyReset, setLastWeeklyReset] = useState(Date.now());
-  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
 
   // Phase 2 Enhancement: Win Streaks
@@ -645,7 +645,7 @@ const Index = () => {
   };
 
   const startNewBattle = () => {
-    setGameState('difficulty-selection');
+    setGameState('combat');
   };
   
   const handleDifficultySelected = (difficulty: DifficultyTier) => {
@@ -1604,20 +1604,32 @@ const Index = () => {
         <GameHub
           player={player}
           equippedItems={equippedItems}
+          activePet={activePet}
           battleHistory={battleHistory}
           winStreak={winStreak}
           skillPoints={skillPoints}
+          dailyFightsUsed={sessionStats.totalBattles}
+          maxDailyFights={20}
           onStartBattle={startNewBattle}
           onOpenPvP={openPvPHub}
           onOpenGuild={() => setGameState('public-guilds')}
+          onOpenBosses={() => setGameState('boss-selection')}
           onOpenInventory={() => {
-            // Show inventory inline - handled by modals below
             toast.info('Opening inventory...');
           }}
           onOpenSkills={() => setSkillTreeOpen(true)}
           onOpenShop={() => setShopOpen(true)}
           onOpenQuests={() => setQuestsOpen(true)}
-          onOpenBosses={() => setGameState('world-boss')}
+          onOpenAchievements={() => setAchievementsOpen(true)}
+          onOpenPets={() => setPetsOpen(true)}
+          onOpenCrafting={() => setCraftingOpen(true)}
+          onOpenTraining={() => setGameState('training')}
+          onOpenDungeon={() => setGameState('dungeon')}
+          onOpenTrading={() => setGameState('trading')}
+          onOpenCosmetics={() => setGameState('cosmetics')}
+          onOpenHallOfFame={() => setGameState('hall-of-fame')}
+          onOpenWorldBoss={() => setGameState('world-boss')}
+          onOpenEvents={() => setGameState('seasonal-events')}
           onOpenSettings={() => {}}
           onSignOut={signOut}
         />

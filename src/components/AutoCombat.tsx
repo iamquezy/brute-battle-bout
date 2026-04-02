@@ -4,6 +4,7 @@ import { createEnemyCharacter, DifficultyTier } from '@/lib/gameLogic';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Heart, Zap, Shield, Sword, Trophy, X, SkipForward, Eye } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -132,7 +133,7 @@ export function AutoCombat({ player, opponentId, difficulty = 'normal', onCombat
   const [enemyAnimating, setEnemyAnimating] = useState(false);
   const [damageNumbers, setDamageNumbers] = useState<{id: number; value: number; isPlayer: boolean; isCrit: boolean}[]>([]);
   
-  const animationRef = useRef<NodeJS.Timeout | null>(null);
+  const animationRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const damageIdRef = useRef(0);
 
   const getAvatarForClass = (characterClass: string, isEnemy = false) => {
@@ -429,22 +430,28 @@ export function AutoCombat({ player, opponentId, difficulty = 'normal', onCombat
           </Card>
         </div>
 
-        {/* Combat Log */}
+        {/* Combat Log - scrollable with all past actions */}
         <Card className="p-4 bg-card/90 backdrop-blur-sm mb-4">
-          <div className="h-24 overflow-y-auto styled-scrollbar">
-            {currentAction ? (
-              <div className={cn(
-                "p-2 rounded text-center animate-slide-in",
-                currentAction.attacker === 'player' ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'
-              )}>
-                <span className="font-medium">{currentAction.message}</span>
-              </div>
-            ) : (
-              <div className="text-center text-muted-foreground py-4">
-                Combat starting...
-              </div>
-            )}
-          </div>
+          <h3 className="text-sm font-semibold text-muted-foreground mb-2">Combat Log</h3>
+          <ScrollArea className="h-32">
+            <div className="space-y-1">
+              {combatActions.slice(0, currentActionIndex + 1).reverse().map((action, i) => (
+                <div key={i} className={cn(
+                  "px-2 py-1 rounded text-xs",
+                  action.attacker === 'player' 
+                    ? action.isEvaded ? 'bg-muted/30 text-muted-foreground' : 'bg-success/10 text-success'
+                    : action.isEvaded ? 'bg-muted/30 text-muted-foreground' : 'bg-destructive/10 text-destructive'
+                )}>
+                  {action.message}
+                </div>
+              ))}
+              {currentActionIndex < 0 && (
+                <div className="text-center text-muted-foreground py-4 text-xs">
+                  Combat starting...
+                </div>
+              )}
+            </div>
+          </ScrollArea>
           
           {/* Progress indicator */}
           <div className="mt-3">
@@ -460,43 +467,92 @@ export function AutoCombat({ player, opponentId, difficulty = 'normal', onCombat
         </Card>
 
         {/* Result Modal */}
-        {showResult && (
-          <div className="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50 animate-slide-up">
-            <Card className={cn(
-              "p-8 max-w-md w-full mx-4 text-center",
-              victory ? "border-success/50" : "border-destructive/50"
-            )}>
-              <div className={cn(
-                "w-20 h-20 mx-auto mb-4 rounded-full flex items-center justify-center",
-                victory ? "bg-success/20" : "bg-destructive/20"
+        {showResult && (() => {
+          const totalDamage = combatActions
+            .filter(a => a.attacker === 'player' && !a.isEvaded)
+            .reduce((sum, a) => sum + a.damage, 0);
+          const critsLanded = combatActions.filter(a => a.attacker === 'player' && a.isCrit).length;
+          const totalTurns = combatActions.length;
+          
+          const difficultyMultipliers: Record<DifficultyTier, number> = {
+            easy: 0.75, normal: 1, hard: 1.5, brutal: 2
+          };
+          const multiplier = difficultyMultipliers[difficulty];
+          const baseExp = 20 + enemy.level * 10;
+          const baseGold = 10 + enemy.level * 5;
+          const expReward = victory ? Math.floor(baseExp * multiplier) : Math.floor(baseExp * 0.2);
+          const goldReward = victory ? Math.floor(baseGold * multiplier) : Math.floor(baseGold * 0.1);
+
+          return (
+            <div className="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50 animate-slide-up">
+              <Card className={cn(
+                "p-6 max-w-sm w-full mx-4 text-center border-2",
+                victory ? "border-success/50" : "border-destructive/50"
               )}>
-                {victory ? (
-                  <Trophy className="w-10 h-10 text-success" />
-                ) : (
-                  <X className="w-10 h-10 text-destructive" />
-                )}
-              </div>
-              
-              <h2 className={cn(
-                "text-3xl font-bold mb-2",
-                victory ? "text-success" : "text-destructive"
-              )}>
-                {victory ? 'VICTORY!' : 'DEFEAT'}
-              </h2>
-              
-              <p className="text-muted-foreground mb-6">
-                {victory 
-                  ? `You defeated ${enemy.name}!`
-                  : `${enemy.name} was too strong...`
-                }
-              </p>
-              
-              <Button onClick={handleContinue} className="w-full" size="lg">
-                Continue
-              </Button>
-            </Card>
-          </div>
-        )}
+                <div className={cn(
+                  "w-16 h-16 mx-auto mb-3 rounded-full flex items-center justify-center",
+                  victory ? "bg-success/20" : "bg-destructive/20"
+                )}>
+                  {victory ? (
+                    <Trophy className="w-8 h-8 text-success" />
+                  ) : (
+                    <X className="w-8 h-8 text-destructive" />
+                  )}
+                </div>
+                
+                <h2 className={cn(
+                  "text-2xl font-bold mb-1",
+                  victory ? "text-success" : "text-destructive"
+                )}>
+                  {victory ? 'VICTORY!' : 'DEFEAT'}
+                </h2>
+                
+                <p className="text-sm text-muted-foreground mb-4">
+                  {victory 
+                    ? `You defeated ${enemy.name}!`
+                    : `${enemy.name} was too strong...`
+                  }
+                </p>
+
+                {/* Battle stats */}
+                <div className="grid grid-cols-2 gap-2 mb-4 text-xs">
+                  <div className="bg-secondary/30 rounded-lg p-2">
+                    <p className="text-muted-foreground">Damage Dealt</p>
+                    <p className="font-bold text-foreground">{totalDamage}</p>
+                  </div>
+                  <div className="bg-secondary/30 rounded-lg p-2">
+                    <p className="text-muted-foreground">Crits Landed</p>
+                    <p className="font-bold text-foreground">{critsLanded}</p>
+                  </div>
+                  <div className="bg-secondary/30 rounded-lg p-2">
+                    <p className="text-muted-foreground">Turns</p>
+                    <p className="font-bold text-foreground">{totalTurns}</p>
+                  </div>
+                  <div className="bg-secondary/30 rounded-lg p-2">
+                    <p className="text-muted-foreground">Difficulty</p>
+                    <p className="font-bold text-foreground capitalize">{difficulty}</p>
+                  </div>
+                </div>
+
+                {/* Rewards */}
+                <div className="flex items-center justify-center gap-4 mb-4 text-sm">
+                  <div className="flex items-center gap-1">
+                    <Zap className="w-4 h-4 text-accent" />
+                    <span className="font-bold text-accent">+{expReward} XP</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Heart className="w-4 h-4 text-primary" />
+                    <span className="font-bold text-primary">+{goldReward} Gold</span>
+                  </div>
+                </div>
+                
+                <Button onClick={handleContinue} className="w-full bg-gradient-gold text-primary-foreground" size="lg">
+                  Continue
+                </Button>
+              </Card>
+            </div>
+          );
+        })()}
       </div>
     </div>
   );
