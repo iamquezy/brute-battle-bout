@@ -218,21 +218,45 @@
   /* Combat-specific animations */
   @keyframes moveToEnemy {
     0% { transform: translateX(0); }
-    50% { transform: translateX(80px); }
-    100% { transform: translateX(0); }
+    30% { transform: translateX(60px) scale(1.05); }
+    60% { transform: translateX(60px) scale(1.05); }
+    100% { transform: translateX(0) scale(1); }
   }
 
   @keyframes moveToPlayer {
     0% { transform: translateX(0); }
-    50% { transform: translateX(-80px); }
-    100% { transform: translateX(0); }
+    30% { transform: translateX(-60px) scale(1.05); }
+    60% { transform: translateX(-60px) scale(1.05); }
+    100% { transform: translateX(0) scale(1); }
   }
 
   .animate-move-to-enemy {
-    animation: moveToEnemy 0.6s ease-in-out;
+    animation: moveToEnemy 0.7s ease-in-out;
   }
 
   .animate-move-to-player {
-    animation: moveToPlayer 0.6s ease-in-out;
+    animation: moveToPlayer 0.7s ease-in-out;
+  }
+
+  /* Evade animation */
+  @keyframes evade {
+    0% { transform: translateX(0); }
+    25% { transform: translateX(-15px) rotate(-5deg); }
+    75% { transform: translateX(5px) rotate(2deg); }
+    100% { transform: translateX(0) rotate(0); }
+  }
+
+  .animate-evade {
+    animation: evade 0.5s ease-out;
+  }
+
+  /* Health bar pulse when low */
+  @keyframes lowHealthPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+  }
+
+  .health-critical {
+    animation: lowHealthPulse 1s ease-in-out infinite;
   }
 }
