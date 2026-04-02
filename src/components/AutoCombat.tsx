@@ -132,7 +132,7 @@ export function AutoCombat({ player, opponentId, difficulty = 'normal', onCombat
   const [enemyAnimating, setEnemyAnimating] = useState(false);
   const [damageNumbers, setDamageNumbers] = useState<{id: number; value: number; isPlayer: boolean; isCrit: boolean}[]>([]);
   
-  const animationRef = useRef<NodeJS.Timeout | null>(null);
+  const animationRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const damageIdRef = useRef(0);
 
   const getAvatarForClass = (characterClass: string, isEnemy = false) => {

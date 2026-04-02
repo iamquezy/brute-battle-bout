@@ -138,7 +138,7 @@ const Index = () => {
   // Phase 2.5: Save System
   const [lastDailyReset, setLastDailyReset] = useState(Date.now());
   const [lastWeeklyReset, setLastWeeklyReset] = useState(Date.now());
-  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
 
   // Phase 2 Enhancement: Win Streaks
