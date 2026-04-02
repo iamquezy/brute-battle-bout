@@ -552,7 +552,7 @@ export function AutoCombat({ player, opponentId, difficulty = 'normal', onCombat
               </Card>
             </div>
           );
-        }
+        })()}
       </div>
     </div>
   );
