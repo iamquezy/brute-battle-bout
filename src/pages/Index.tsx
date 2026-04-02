@@ -1604,20 +1604,33 @@ const Index = () => {
         <GameHub
           player={player}
           equippedItems={equippedItems}
+          activePet={activePet}
           battleHistory={battleHistory}
           winStreak={winStreak}
           skillPoints={skillPoints}
+          dailyFightsUsed={sessionStats.totalBattles}
+          maxDailyFights={20}
           onStartBattle={startNewBattle}
           onOpenPvP={openPvPHub}
           onOpenGuild={() => setGameState('public-guilds')}
-          onOpenInventory={() => {
-            // Show inventory inline - handled by modals below
+          onOpenBosses={() => setGameState('boss-selection')}
+          onOpenInventory={() => setShopOpen(false) || true ? (() => {
+            // Open inventory modal
             toast.info('Opening inventory...');
-          }}
+          })() : undefined}
           onOpenSkills={() => setSkillTreeOpen(true)}
           onOpenShop={() => setShopOpen(true)}
           onOpenQuests={() => setQuestsOpen(true)}
-          onOpenBosses={() => setGameState('world-boss')}
+          onOpenAchievements={() => setAchievementsOpen(true)}
+          onOpenPets={() => setPetsOpen(true)}
+          onOpenCrafting={() => setCraftingOpen(true)}
+          onOpenTraining={() => setGameState('training')}
+          onOpenDungeon={() => setGameState('dungeon')}
+          onOpenTrading={() => setGameState('trading')}
+          onOpenCosmetics={() => setGameState('cosmetics')}
+          onOpenHallOfFame={() => setGameState('hall-of-fame')}
+          onOpenWorldBoss={() => setGameState('world-boss')}
+          onOpenEvents={() => setGameState('seasonal-events')}
           onOpenSettings={() => {}}
           onSignOut={signOut}
         />
