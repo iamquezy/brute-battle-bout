@@ -4,6 +4,7 @@ import { createEnemyCharacter, DifficultyTier } from '@/lib/gameLogic';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Heart, Zap, Shield, Sword, Trophy, X, SkipForward, Eye } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
