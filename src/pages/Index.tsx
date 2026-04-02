@@ -645,7 +645,7 @@ const Index = () => {
   };
 
   const startNewBattle = () => {
-    setGameState('difficulty-selection');
+    setGameState('combat');
   };
   
   const handleDifficultySelected = (difficulty: DifficultyTier) => {
